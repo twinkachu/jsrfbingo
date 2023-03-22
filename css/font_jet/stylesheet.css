@@ -1,0 +1,9 @@
+@font-face {
+    font-family: 'jet_setregular';
+    src: url('jet_set-webfont.woff2') format('woff2'),
+         url('jet_set-webfont.woff') format('woff'),
+         url('JET_SET.tff') format("tff");
+    font-weight: normal;
+    font-style: normal;
+
+}
