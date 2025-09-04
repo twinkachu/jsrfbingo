@@ -1,13 +1,28 @@
-[core]
-	repositoryformatversion = 0
-	filemode = false
-	bare = false
-	logallrefupdates = true
-	symlinks = false
-	ignorecase = true
-[remote "origin"]
-	url = https://twinkachu@github.com/twinkachu/jsrfbingo
-	fetch = +refs/heads/*:refs/remotes/origin/*
-[branch "master"]
-	remote = origin
-	merge = refs/heads/master
+alerts:
+- rule: DEPLOYMENT_FAILED
+- rule: DOMAIN_FAILED
+domains:
+- domain: jsrf.bingo
+  type: PRIMARY
+  zone: jsrf.bingo
+features:
+- buildpack-stack=ubuntu-22
+ingress:
+  rules:
+  - component:
+      name: blog
+    match:
+      path:
+        prefix: /
+name: JSRF Bingo
+region: nyc
+static_sites:
+- dockerfile_path: ./Dockerfile
+  github:
+    branch: main
+    # this will deploy each time you push (recommended)
+    deploy_on_push: true
+    repo: jsrfbingo
+  name: blog
+  output_dir: /workspace/public
+  source_dir: /
