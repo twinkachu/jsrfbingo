@@ -14,7 +14,7 @@ ingress:
     match:
       path:
         prefix: /
-name: JSRF Bingo
+name: jsrf-bingo-site
 region: nyc
 static_sites:
 - dockerfile_path: ./Dockerfile
