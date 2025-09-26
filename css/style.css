@@ -23,6 +23,7 @@ h1 {
     background-color: #61b1b7;
     padding: 30px;
     transform: translateY(25%);
+	border-radius: 25px;
 }
 .menu {
     display: flex;
@@ -77,4 +78,5 @@ a:visited {
 #logo {
 	width: 50px;
 	height: 50px;
+
 }
