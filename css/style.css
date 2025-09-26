@@ -2,30 +2,63 @@ body {
 	font-family: 'bai_jamjureeregular';
 	width: 50%;
 	margin: auto;
-	background-color: #48afb3;
+	background-color: #328386;
+    color: white;
+}
+
+img {
+    display: block;
+    width: 300px;
+    height: 300px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0px;
+}
+
+h1 {
+    text-align: center;
+}
+
+.box {
+    background-color: #61b1b7;
+    padding: 30px;
+    transform: translateY(25%);
+}
+.menu {
+    display: flex;
+    justify-content: space-around;
+}
+
+footer {
+    position: fixed;
+    bottom: 0px;
+    left: 0px;
+    width: 100%;
+    text-align: center;
 }
 
 button {
-  background-color: #48AEB0;
-  /*background-image: url("banner.png");
-  background-position: center;*/
+  background-color: #f9bf00;
   border-radius: 8px;
   border-style: none;
   font-family: 'bai_jamjureeregular';
-  height: 40px;
+  height: 50px;
   margin: 0;
-  padding: 10px 16px;
+  padding: 15px 20px;
   text-align: center;
+  font-size: medium;
+  font-weight: bold;
 }
 
 button:hover,
 button:focus {
-  background-color: #48afb3;
+  background-color: #e69b00;
 }
 
 a {
 	color: black;
 	font-family: 'bai_jamjureeregular';
+    text-decoration: none;
 }
 
 a:visited {
