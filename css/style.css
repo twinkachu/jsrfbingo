@@ -3,7 +3,7 @@ body {
 	width: 50%;
 	margin: auto;
 	background-color: #328386;
-    color: white;
+    color: black;
 }
 
 img {
@@ -17,14 +17,24 @@ img {
 
 h1 {
     text-align: center;
+    color: black;
+}
+
+h3 {
+    color: black;
 }
 
 .box {
     background-color: #61b1b7;
-    padding: 30px;
-    transform: translateY(25%);
 	border-radius: 25px;
+    padding: 15px;
 }
+
+#mainmenu {
+    padding: 15px;
+    transform: translateY(25%);
+}
+
 .menu {
     display: flex;
     justify-content: space-around;
@@ -49,6 +59,7 @@ button {
   text-align: center;
   font-size: medium;
   font-weight: bold;
+  min-width: 100px;
 }
 
 button:hover,
@@ -57,13 +68,13 @@ button:focus {
 }
 
 a {
-	color: black;
+	color: white;
 	font-family: 'bai_jamjureeregular';
     text-decoration: none;
 }
 
 a:visited {
-	color: black;
+	color: white;
 }
 
 .nav {
