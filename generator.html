@@ -10,6 +10,31 @@
 <body>
   <h1>Bingo Board Generators</h1>
 
+  <div class="box">
+    <h3>Generator options</h3>
+    <p>All of the generator options are built into <a href="https://bingo.kevcyg.net/" target="_blank">Kevingo</a>. These instructions are for using older generators, or for accessing a board JSON. If you're using Bingosync, you'll need to use one of these options:</p>
+    <ul>
+    <li><a href="https://jsrfbingo.pages.dev/" target=""_blank>Kev360's board generator site</a> is the most user-friendly option. Select your preferred settings, hit "generate", copy the JSON output.</li>
+    <li>Daft's generator (<a href="/media/qtpy01_no_gui.py" target="_blank">qtpy01_no_gui</a>): This is the original Quackthingo board generator, adapted for use in Python. It has no special customization options - it just outputs a board JSON, a graffiti square count, and a board seed.</li>
+    <li>Crabbi's generator (<a href="/media/generator.py" target="_blank">generator.py</a>): This is a generator designed to balance boards differently. Kev's generators are adapted from this code. It has a few balancing options that can be toggled, including the option to allow more than 1 graffiti square per row/column. By default, it outputs a board JSON and a list of graffiti squares.</li>
+    </ul>
+    <p>Daft and Crabbi's generators can be run from a command line (if you have Python installed), or using an online Python interpreter.</p>
+  <h3>Non-CLI method</h3>
+  <ul>
+    <li>Open an online <a href="https://www.programiz.com/python-programming/online-compiler/" target="_blank">Python interpreter</a></li>
+    <li>Paste the contents of your board generator python file into the left side, and hit "run"</li>
+  </ul>
+  <h3>CLI method</h3>
+  <sub>(these instructions are for Windows, if you use another OS you're on your own sorry)</sub>
+  <ul>
+    <li>Make sure that you have <a href="https://www.python.org/downloads/" target="_blank">Python</a> installed</li>
+    <li>Download the generator .py file that you want to use</li>
+    <li>Open command prompt, and change directory into the right folder (type "cd" and drag the folder that contains your generator into the command prompt window)</li>
+    <li>Run the .py file (type "py generator.py" or "py qtpy01_no_gui.py")</li>
+  </ul>
+  <p>Once you have your board JSON, regardless of which method you're using, open your board site (<a href="https://bingosync.com/" target="_blank">Bingosync</a> or <a href="https://bingo.kevcyg.net/board" target="_blank">Kevingo</a>. Hit the "custom (advanced)" option under the "game" dropdown menu for Bingosync, or hit the "other" option in the "generate new board" menu for Kevingo. Paste your generator's output (excluding anything like graffiti count info - you just want everything between the [brackets]) into the board field.</p>
+  </div>
+
   <br>
     <div style="display: flex; justify-content: center;">
   <a href="./wiki.html"><button type="button">Wiki Home</button></a>
