@@ -50,8 +50,28 @@ document.addEventListener("DOMContentLoaded", () => {
 				kevongobtn.disabled = true;
             };
 
-            socket.onclose = (event) => console.log("Disconnected From Websocket", event)
+            socket.onclose = (event) => {
+				console.log("Disconnected From Websocket", event); 
+				socket = null;
+				kevingostatus.innerHTML = "Status : Disconnected"
+				kevingobtn.innerHTML = "Connect to Bingo"
+
+				kevangobtn.disabled = false;
+				kevungobtn.disabled = false;
+				kevongobtn.disabled = false;}
             socket.onerror = (error) => console.error("WebSocket error:", error);
+			socket.onmessage = (message) => {
+				if (JSON.parse(message.data).type == "kick") {
+					socket.close()
+					socket = null;
+					kevingostatus.innerHTML = "Status : Disconnected"
+					kevingobtn.innerHTML = "Connect to Bingo"
+
+					kevangobtn.disabled = false;
+					kevungobtn.disabled = false;
+					kevongobtn.disabled = false;
+				};
+			}
         } else {
             socket.close()
             socket = null;
@@ -82,8 +102,27 @@ document.addEventListener("DOMContentLoaded", () => {
 				kevongobtn.disabled = true;
             };
 
-            socket.onclose = (event) => console.log("Disconnected From Websocket", event)
+            socket.onclose = (event) => {console.log("Disconnected From Websocket", event);
+            socket = null;
+            kevingostatus.innerHTML = "Status : Disconnected"
+            kevangobtn.innerHTML = "Connect to Bango"
+
+			kevingobtn.disabled = false;
+			kevungobtn.disabled = false;
+			kevongobtn.disabled = false;
+			}
             socket.onerror = (error) => console.error("WebSocket error:", error);
+			socket.onmessage = (message) => {
+				if (JSON.parse(message.data).type == "kick") {
+					socket.close()
+					socket = null;
+					kevingostatus.innerHTML = "Status : Disconnected"
+            kevangobtn.innerHTML = "Connect to Bango"
+
+			kevingobtn.disabled = false;
+			kevungobtn.disabled = false;
+			kevongobtn.disabled = false;
+				}};
         } else {
             socket.close()
             socket = null;
@@ -114,8 +153,27 @@ document.addEventListener("DOMContentLoaded", () => {
 				kevangobtn.disabled = true;
             };
 
-            socket.onclose = (event) => console.log("Disconnected From Websocket", event)
+            socket.onclose = (event) => {console.log("Disconnected From Websocket", event);
+            socket = null;
+            kevingostatus.innerHTML = "Status : Disconnected"
+            kevongobtn.innerHTML = "Connect to Bongo"
+
+			kevingobtn.disabled = false;
+			kevangobtn.disabled = false;
+			kevungobtn.disabled = false;
+			}
             socket.onerror = (error) => console.error("WebSocket error:", error);
+			socket.onmessage = (message) => {
+				if (JSON.parse(message.data).type == "kick") {
+					socket.close()
+					socket = null;
+					kevingostatus.innerHTML = "Status : Disconnected"
+            kevongobtn.innerHTML = "Connect to Bongo"
+
+			kevingobtn.disabled = false;
+			kevangobtn.disabled = false;
+			kevungobtn.disabled = false;
+				}};
         } else {
             socket.close()
             socket = null;
@@ -146,8 +204,27 @@ document.addEventListener("DOMContentLoaded", () => {
 				kevingobtn.disabled = true;
             };
 
-            socket.onclose = (event) => console.log("Disconnected From Websocket", event)
+            socket.onclose = (event) => {console.log("Disconnected From Websocket", event);
+            socket = null;
+            kevingostatus.innerHTML = "Status : Disconnected"
+            kevungobtn.innerHTML = "Connect to Bungo"
+
+			kevangobtn.disabled = false;
+			kevingobtn.disabled = false;
+			kevongobtn.disabled = false;}
             socket.onerror = (error) => console.error("WebSocket error:", error);
+			socket.onmessage = (message) => {
+				if (JSON.parse(message.data).type == "kick") {
+					socket.close()
+					socket = null;
+					kevingostatus.innerHTML = "Status : Disconnected"
+            kevungobtn.innerHTML = "Connect to Bungo"
+
+			kevangobtn.disabled = false;
+			kevingobtn.disabled = false;
+			kevongobtn.disabled = false;
+				}};
+			
         } else {
             socket.close()
             socket = null;
@@ -207,26 +284,46 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function connectPeer(ID1, ID2) {
     console.log("Attempting connections...");
+
     conn1 = peer.connect(ID1[0]);
+
     let leftTeam = new Team(conn1, ID1[1]);
     teams.push(leftTeam);
-    
-    conn1.on("data", (data) => {
-        multistatus1.innerHTML = "Team 1 : Connected"
+
+    conn1.on("open", () => {
+        console.log("Team 1 connected");
+        multistatus1.innerHTML = "Team 1 : Connected";
         multibtn.disabled = true;
+    });
+
+    conn1.on("data", (data) => {
         ParseGameData(JSON.parse(data), leftTeam);
     });
-    
-    
+
+    conn1.on("error", (err) => {
+        console.error("Team 1 connection error:", err);
+    });
+
+
     if (ID2[1] != null) {
         conn2 = peer.connect(ID2[0]);
+
         let rightTeam = new Team(conn2, ID2[1]);
         teams.push(rightTeam);
+
+        conn2.on("open", () => {
+            console.log("Team 2 connected");
+            multistatus2.innerHTML = "Team 2 : Connected";
+        });
+
         conn2.on("data", (data) => {
             ParseGameData(JSON.parse(data), rightTeam);
-            multistatus2.innerHTML = "Team 2 : Connected"
         });
-    };
+
+        conn2.on("error", (err) => {
+            console.error("Team 2 connection error:", err);
+        });
+    }
 }
 
 const LEVELS = Object.freeze({
@@ -604,7 +701,6 @@ function HandleTagSprayed(levelID, graffitiID, tagID, playerIndex, teamObj) {
 			// Level incomplete, but tag is complete
 			console.log(`${teamObj.name}: Currently at ${levelObj.CountGraffiti()} / ${levelObj.maxGraffiti} in ${levelObj.name}.`);
 		}
-		SendToServer("graffiti/set", teamObj.OutputAbbreviatedGraffiti());
 	}
 	return;
 }
@@ -623,7 +719,6 @@ function HandleSoulCollect(soulID, playerIndex, teamObj) {
 function HandleTapeCollect(tapeID, teamObj) {
 	console.log(`[${GetNow()}] Team ${teamObj.name} have collected the ${GetTapeFromID(tapeID)} tape.`);
 	teamObj.tapes.push(GetTapeFromID(tapeID));
-	SendToServer("mysterytape/set", teamObj.OutputTeamTapes());
 	return;
 }
 
@@ -672,7 +767,6 @@ function HandleAreaChange(levelID, playerIndex, teamObj) {
 		locationObj[teamObj.players[playerIndex].name] = playerObj;
 		returnObj[teamObj.name] = locationObj; 	
 		//console.log(returnObj);
-		SendToServer("playerloc/set", returnObj);
 	} else {
 		console.log("Unknown Player Location (they haven't moved)");
 	}
@@ -682,8 +776,6 @@ function HandleAreaChange(levelID, playerIndex, teamObj) {
 function HandleKillCombo(teamObj) {
 	teamObj.graffiti = InitTagData();
 	teamObj.tapes = [];
-	SendToServer("graffiti/set", teamObj.OutputAbbreviatedGraffiti());
-	SendToServer("mysterytape/set", teamObj.OutputTeamTapes());
 }
 
 /*
