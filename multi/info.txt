@@ -1,0 +1,17 @@
+Multi Set Radio Future
+
+This is the logic for establishing connections and sending data between players for the multiplayer co-op mod for Jet Set Radio Future.
+
+More details on setup and usage will come later, but for now refer to the JSRF speedrunning and reverse engineering discords.
+
+To use this, you need to run a patched version of the game either on original xbox with EvoX dashboard, or emulated on computer with the CXBX-R emulator.
+
+For EvoX, you need to set the "TSR" option to "Debug" in the dashboard settings.
+
+You need a corresponding "bridge" for your platform. The bridge handles the communications between the xbox or emulator, and provides an interface this page can communicate with. For EvoX bridge you need to specify the ip for the xbox.
+
+Open the bridge after the game executable has started.
+
+The bridge and game should be considered a single unit; if one is restarted, the other must be as well. This page can be restarted and reconnected to an existing bridge however.
+
+The "Peer Server Options" are hidden by default because hopefully you should never need them. They exist because this does depend on a 3rd party service to work, and if its down having those options allows it to be hosted elsewhere to get working again.
