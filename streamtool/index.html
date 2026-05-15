@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>JSRF Bingo OBS Layout Configurator</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main id="appRoot" class="app">
+    <section id="configPanel" class="panel">
+      <h1>JSRF Bingo OBS Configurator</h1>
+      <p class="subtitle">Build your layout, copy URL, then use that link as an OBS Browser Source.</p>
+
+      <div class="row">
+        <label for="mirrorSelect">Gameplay mirror</label>
+        <div id="mirrorSelect" class="mirror-grid" role="radiogroup" aria-label="Gameplay mirror"></div>
+      </div>
+
+      <div class="row">
+        <label for="leftName">Left Player Name</label>
+        <input id="leftName" type="text" maxlength="24" placeholder="Left player">
+      </div>
+
+      <div class="row">
+        <label for="rightName">Right Player Name</label>
+        <input id="rightName" type="text" maxlength="24" placeholder="Right player">
+      </div>
+
+      <div class="card fx-card">
+        <label class="fx-title">Color FX</label>
+        <div class="row fx-row">
+          <label for="hueShift">Hue Shift</label>
+          <input id="hueShift" type="range" min="-180" max="180" step="1">
+          <span id="hueShiftValue" class="fx-value">0deg</span>
+        </div>
+        <div class="row fx-row">
+          <label for="saturation">Saturation</label>
+          <input id="saturation" type="range" min="0" max="220" step="1">
+          <span id="saturationValue" class="fx-value">100%</span>
+        </div>
+        <div class="row fx-row">
+          <label for="brightness">Brightness</label>
+          <input id="brightness" type="range" min="0" max="180" step="1">
+          <span id="brightnessValue" class="fx-value">100%</span>
+        </div>
+        <div class="row fx-row">
+          <label for="contrast">Contrast</label>
+          <input id="contrast" type="range" min="0" max="180" step="1">
+          <span id="contrastValue" class="fx-value">100%</span>
+        </div>
+        <label class="toggle"><input id="disableBeeVfx" type="checkbox">Disable Bee VFX</label>
+      </div>
+
+      <div id="elementsRoot"></div>
+
+      <div class="actions">
+        <button id="applyPreset" type="button">Reset to base design</button>
+        <button id="copyUrl" type="button">Copy OBS URL</button>
+      </div>
+
+      <div class="linkout">
+        <label for="urlOutput">Generated URL</label>
+        <textarea id="urlOutput" readonly></textarea>
+      </div>
+
+      <p class="mode-note">
+        Live edit the config by clicking the panel while in OBS mode!
+        <span class="mode-help-wrap">
+          <span class="mode-help-trigger" tabindex="0" aria-label="How to use OBS interact">?</span>
+          <span class="mode-help-pop">
+            In OBS, select your Browser Source, then click <strong>Interact</strong> to open the source page. Click anywhere on the panel to open the live config menu.
+          </span>
+        </span>
+      </p>
+    </section>
+
+    <section class="preview-wrap">
+      <p id="previewTitle" class="preview-title">Preview</p>
+      <p id="previewMeta" class="preview-meta"></p>
+      <div id="canvas" class="obs-canvas"></div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
