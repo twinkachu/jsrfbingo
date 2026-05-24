@@ -13,10 +13,11 @@ const CHAT_SERVERS = {
 };
 
 let activeChatSocket = null;
-let lastSnipeSignature = "";
-let lastSnipeAt = 0;
-const SNIPE_DEDUPE_MS = 8000;
+let seenSnipeSignatures = new Set();
+let chatPlayerColors = new Map();
+let canvasReferenceScaleObserver = null;
 const CHAT_MAX_MESSAGES = 80;
+const MAX_SEEN_SNIPE_SIGNATURES = 10;
 
 const BASE = {
   mirror: "bingo.kevcyg.net",
@@ -36,7 +37,7 @@ const BASE = {
 const FIXED_LAYOUT = {
   canvasWidth: 1920,
   canvasHeight: 1080,
-  board: { x: 530, y: 413, w: 860, h: 860 },
+  board: { x: 715, y: 606, w: 490, h: 475 },
   chat: { x: 0, y: 760, w: 440, h: 320 },
   points: { x: 1480, y: 760, w: 440, h: 320 },
   timer: { x: 906, y: 12, w: 109, h: 57 }
@@ -118,6 +119,14 @@ function buildLayoutFxFilter(config) {
   }).join(" ");
 }
 
+function buildNameplateFxFilter(config) {
+  return ["hueShift", "saturation", "contrast"].map((key) => {
+    const unit = FX_LIMITS[key].unit;
+    const cssFunction = FX_FILTER_FUNCTIONS[key];
+    return `${cssFunction}(${config[key]}${unit})`;
+  }).join(" ");
+}
+
 function setPageMode(obsMode) {
   const appRoot = byId("appRoot");
   const panel = byId("configPanel");
@@ -131,12 +140,11 @@ function setPageMode(obsMode) {
   previewMeta.classList.toggle("hidden", obsMode);
 }
 
-function createOverlayImage({ className, src, alt, hidden = false }) {
+function createOverlayImage({ className, src, alt }) {
   const image = document.createElement("img");
   image.className = className;
   image.src = src;
   image.alt = alt;
-  if (hidden) image.setAttribute("aria-hidden", "true");
   return image;
 }
 
@@ -146,6 +154,41 @@ function createNameplate(className, name) {
   nameplate.textContent = name;
   nameplate.dataset.name = name;
   return nameplate;
+}
+
+function createTopBranding() {
+  const branding = document.createElement("div");
+  branding.className = "top-branding";
+  branding.setAttribute("aria-label", "Twitch, YouTube, Ko-fi slash JSRFBINGO");
+  branding.innerHTML = `
+    <div class="top-branding-bg color-fx-target" aria-hidden="true"></div>
+    <div class="top-branding-content">
+      <img class="top-branding-icon twitch-icon" src="./SVGS/Twitch.svg" alt="Twitch">
+      <img class="top-branding-icon youtube-icon" src="./SVGS/youtube.webp" alt="YouTube">
+      <span class="top-branding-icon kofi-icon-wrap" aria-label="Ko-fi">
+        <img class="kofi-icon" src="./SVGS/kofi_symbol.svg" alt="">
+      </span>
+      <span class="top-branding-separator" aria-hidden="true">/</span>
+      <span class="top-branding-handle">JSRFBINGO</span>
+    </div>
+  `;
+  return branding;
+}
+
+function setCanvasReferenceScale(canvas) {
+  const renderWidth = canvas.clientWidth || FIXED_LAYOUT.canvasWidth;
+  canvas.style.setProperty("--layout-reference-scale", String(renderWidth / FIXED_LAYOUT.canvasWidth));
+}
+
+function observeCanvasReferenceScale(canvas) {
+  setCanvasReferenceScale(canvas);
+  if (canvasReferenceScaleObserver || typeof ResizeObserver === "undefined") return;
+  canvasReferenceScaleObserver = new ResizeObserver((entries) => {
+    for (const entry of entries) {
+      setCanvasReferenceScale(entry.target);
+    }
+  });
+  canvasReferenceScaleObserver.observe(canvas);
 }
 
 function mirrorLabel(mirrorHost) {
@@ -208,6 +251,24 @@ function parseChatMessage(data) {
   return { message: JSON.stringify(data) };
 }
 
+function normalizePlayerColorName(name) {
+  return String(name ?? "").trim().toLowerCase();
+}
+
+function isValidChatColor(color) {
+  return /^#[0-9a-f]{3,8}$/i.test(String(color ?? "").trim());
+}
+
+function registerChatPlayerColor(author, color) {
+  const key = normalizePlayerColorName(author);
+  if (!key || !isValidChatColor(color)) return;
+  chatPlayerColors.set(key, String(color).trim());
+}
+
+function chatColorForPlayer(name) {
+  return chatPlayerColors.get(normalizePlayerColorName(name)) || "";
+}
+
 function formatClock(value) {
   if (!value) return "";
   const date = new Date(value);
@@ -226,6 +287,8 @@ function formatGameTime(value) {
 
 function createChatMessage(data, shouldAnimate = true) {
   const parsed = parseChatMessage(data);
+  registerChatPlayerColor(parsed.author, parsed.color);
+
   const message = document.createElement("div");
   message.className = "message";
   if (!shouldAnimate) message.classList.add("message-static");
@@ -282,16 +345,49 @@ function parseMaybeJson(value) {
   }
 }
 
+function normalizeSnipeSignatureText(value) {
+  return String(value ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function normalizeSnipeSignatureTime(value) {
+  if (value === null || value === undefined || value === "") return "";
+  const numericValue = Number(value);
+  if (Number.isFinite(numericValue)) return numericValue.toFixed(3);
+  return normalizeSnipeSignatureText(value);
+}
+
+function createSnipeSignature(snipe) {
+  const sniper = normalizeSnipeSignatureText(snipe.sniper);
+  const sniped = normalizeSnipeSignatureText(snipe.sniped);
+  const goal = normalizeSnipeSignatureText(snipe.goal);
+  if (!sniper || !sniped || !goal) return "";
+
+  return [
+    sniper,
+    sniped,
+    goal,
+    normalizeSnipeSignatureTime(snipe.time)
+  ].join("|");
+}
+
+function rememberSnipeSignature(signature) {
+  if (seenSnipeSignatures.has(signature)) return false;
+
+  seenSnipeSignatures.add(signature);
+  while (seenSnipeSignatures.size > MAX_SEEN_SNIPE_SIGNATURES) {
+    const oldestSignature = seenSnipeSignatures.values().next().value;
+    seenSnipeSignatures.delete(oldestSignature);
+  }
+
+  return true;
+}
+
 function showSnipeNotification(slot, data) {
   const snipe = parseMaybeJson(data);
   if (!snipe || typeof snipe !== "object") return;
-  if (!snipe.sniper || !snipe.sniped || !snipe.goal) return;
 
-  const signature = `${snipe.sniper}|${snipe.sniped}|${snipe.goal}|${snipe.time ?? ""}`;
-  const now = Date.now();
-  if (signature === lastSnipeSignature && now - lastSnipeAt < SNIPE_DEDUPE_MS) return;
-  lastSnipeSignature = signature;
-  lastSnipeAt = now;
+  const signature = createSnipeSignature(snipe);
+  if (!signature || !rememberSnipeSignature(signature)) return;
 
   const existing = slot.querySelector(".snipe-notification");
   if (existing) existing.remove();
@@ -306,21 +402,52 @@ function showSnipeNotification(slot, data) {
       <span class="snipe-sniped"></span>
     </div>
     <div class="snipe-goal"></div>
-    <div class="snipe-time"></div>
+    <div class="snipe-time">
+      <span class="snipe-time-label"></span>
+      <span class="snipe-time-value"></span>
+    </div>
   `;
 
-  notification.querySelector(".snipe-sniper").textContent = snipe.sniper || "Someone";
-  notification.querySelector(".snipe-sniped").textContent = snipe.sniped || "someone";
+  const sniper = notification.querySelector(".snipe-sniper");
+  const sniped = notification.querySelector(".snipe-sniped");
+  const sniperColor = chatColorForPlayer(snipe.sniper);
+  const snipedColor = chatColorForPlayer(snipe.sniped);
+  sniper.textContent = snipe.sniper || "Someone";
+  sniped.textContent = snipe.sniped || "someone";
+  if (sniperColor) sniper.style.color = sniperColor;
+  if (snipedColor) sniped.style.color = snipedColor;
   notification.querySelector(".snipe-goal").textContent = snipe.goal || "";
-  notification.querySelector(".snipe-time").textContent = Number.isFinite(Number(snipe.time))
-    ? `by ${Number(snipe.time).toFixed(3)}s`
-    : "";
+  const timeLabel = notification.querySelector(".snipe-time-label");
+  const timeValue = notification.querySelector(".snipe-time-value");
+  if (Number.isFinite(Number(snipe.time))) {
+    timeLabel.textContent = "by ";
+    timeValue.textContent = `${Number(snipe.time).toFixed(3)}s`;
+  } else {
+    timeLabel.textContent = "";
+    timeValue.textContent = "";
+  }
 
   slot.appendChild(notification);
   window.setTimeout(() => {
     notification.classList.add("snipe-notification-out");
     window.setTimeout(() => notification.remove(), 450);
   }, 4600);
+}
+
+function showDemoSnipeNotification(config = null) {
+  const slot = document.querySelector(".chat-slot");
+  if (!slot) return;
+  const leftName = readPlayerName(config?.leftName || "");
+  const rightName = readPlayerName(config?.rightName || "");
+  const sniper = leftName || "P1";
+  const sniped = rightName || "P2";
+
+  showSnipeNotification(slot, {
+    sniper,
+    sniped,
+    goal: "Shibuya 093 - Cubby",
+    time: (Math.random() * 3 + 0.1).toFixed(3)
+  });
 }
 
 function scrollChatToBottom(log) {
@@ -339,15 +466,15 @@ function handleChatPayload(slot, log, payload) {
   }
 
   if (event.type === "history" && Array.isArray(event.data)) {
-      log.innerHTML = "";
-      const fragment = document.createDocumentFragment();
-      event.data.slice(-CHAT_MAX_MESSAGES).forEach((message) => {
-        fragment.appendChild(createChatMessage(message, false));
-      });
-      log.appendChild(fragment);
-      scrollChatToBottom(log);
-      return;
-    }
+    log.innerHTML = "";
+    const fragment = document.createDocumentFragment();
+    event.data.slice(-CHAT_MAX_MESSAGES).forEach((message) => {
+      fragment.appendChild(createChatMessage(message, false));
+    });
+    log.appendChild(fragment);
+    scrollChatToBottom(log);
+    return;
+  }
 
   if (event.type === "message") {
     appendChatMessage(log, event.data);
@@ -570,7 +697,9 @@ function renderLayout(config, obsMode) {
   canvas.classList.toggle("bee-vfx-disabled", Boolean(config.disableBeeVfx));
 
   canvas.style.aspectRatio = `${FIXED_LAYOUT.canvasWidth} / ${FIXED_LAYOUT.canvasHeight}`;
+  observeCanvasReferenceScale(canvas);
   canvas.style.setProperty("--layout-fx-filter", buildLayoutFxFilter(config));
+  canvas.style.setProperty("--nameplate-fx-filter", buildNameplateFxFilter(config));
   const sources = buildSources(config.mirror);
   const mirrorHost = normalizeMirror(config.mirror);
 
@@ -596,12 +725,7 @@ function renderLayout(config, obsMode) {
   canvas.appendChild(createNameplate("left-nameplate", config.leftName));
   canvas.appendChild(createNameplate("right-nameplate", config.rightName));
 
-  canvas.appendChild(createOverlayImage({
-    className: "overlay top-overlay color-fx-target",
-    src: "./topimage.png",
-    alt: "",
-    hidden: true
-  }));
+  canvas.appendChild(createTopBranding());
 
   if (!obsMode) {
     const previewMeta = byId("previewMeta");
@@ -806,7 +930,7 @@ function setupObsMenu(state) {
         <input data-obs-field="contrast" type="range" min="0" max="180" step="1">
         <span class="fx-value" data-obs-value="contrast">100%</span>
       </div>
-      <label class="toggle"><input data-obs-field="disableBeeVfx" type="checkbox">Disable Bee VFX</label>
+      <label class="toggle bfx-toggle"><input data-obs-field="disableBeeVfx" type="checkbox">Disable BFX</label>
       <div class="obs-menu-toggles">
         ${ELEMENT_ORDER.map(({ key, name }) => `<label class="toggle"><input data-obs-field="${key}.show" type="checkbox">${name}</label>`).join("")}
       </div>
@@ -834,7 +958,12 @@ function setupObsMenu(state) {
     hitArea.classList.remove("hidden");
   };
 
-  hitArea.addEventListener("click", () => {
+  hitArea.addEventListener("click", (event) => {
+    if (event.shiftKey) {
+      event.preventDefault();
+      showDemoSnipeNotification(state.config);
+      return;
+    }
     syncObsMenuValues(panel, state.config);
     openMenu();
   });
