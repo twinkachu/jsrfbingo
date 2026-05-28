@@ -61,7 +61,8 @@ document.addEventListener("DOMContentLoaded", () => {
 				kevongobtn.disabled = false;}
             socket.onerror = (error) => console.error("WebSocket error:", error);
 			socket.onmessage = (message) => {
-				if (JSON.parse(message.data).type == "kick") {
+				let message = JSON.parse(message.data);
+				if (message.type == "kick") {
 					socket.close()
 					socket = null;
 					kevingostatus.innerHTML = "Status : Disconnected"
@@ -71,6 +72,12 @@ document.addEventListener("DOMContentLoaded", () => {
 					kevungobtn.disabled = false;
 					kevongobtn.disabled = false;
 				};
+				if (message.type == "game_start") {
+					let restart = message.data.restart ?? "false";
+					if (restart == "true") {
+						sendGarageWarp();
+					}
+				}
 			}
         } else {
             socket.close()
@@ -113,16 +120,24 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
             socket.onerror = (error) => console.error("WebSocket error:", error);
 			socket.onmessage = (message) => {
-				if (JSON.parse(message.data).type == "kick") {
+				let message = JSON.parse(message.data);
+				if (message.type == "kick") {
 					socket.close()
 					socket = null;
 					kevingostatus.innerHTML = "Status : Disconnected"
-            kevangobtn.innerHTML = "Connect to Bango"
+					kevangobtn.innerHTML = "Connect to Bango"
 
-			kevingobtn.disabled = false;
-			kevungobtn.disabled = false;
-			kevongobtn.disabled = false;
-				}};
+					kevingobtn.disabled = false;
+					kevungobtn.disabled = false;
+					kevongobtn.disabled = false;
+				}
+				if (message.type == "game_start") {
+					let restart = message.data.restart ?? "false";
+					if (restart == "true") {
+						sendGarageWarp();
+					}
+				}
+			};
         } else {
             socket.close()
             socket = null;
@@ -164,16 +179,24 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
             socket.onerror = (error) => console.error("WebSocket error:", error);
 			socket.onmessage = (message) => {
-				if (JSON.parse(message.data).type == "kick") {
-					socket.close()
-					socket = null;
-					kevingostatus.innerHTML = "Status : Disconnected"
-            kevongobtn.innerHTML = "Connect to Bongo"
+			let message = JSON.parse(message.data);
+			if (message.type == "kick") {
+				socket.close()
+				socket = null;
+				kevingostatus.innerHTML = "Status : Disconnected"
+				kevongobtn.innerHTML = "Connect to Bongo"
 
-			kevingobtn.disabled = false;
-			kevangobtn.disabled = false;
-			kevungobtn.disabled = false;
-				}};
+				kevingobtn.disabled = false;
+				kevangobtn.disabled = false;
+				kevungobtn.disabled = false;
+			}
+			if (message.type == "game_start") {
+				let restart = message.data.restart ?? "false";
+				if (restart == "true") {
+					sendGarageWarp();
+				}
+			}
+		};
         } else {
             socket.close()
             socket = null;
@@ -214,16 +237,24 @@ document.addEventListener("DOMContentLoaded", () => {
 			kevongobtn.disabled = false;}
             socket.onerror = (error) => console.error("WebSocket error:", error);
 			socket.onmessage = (message) => {
-				if (JSON.parse(message.data).type == "kick") {
-					socket.close()
-					socket = null;
-					kevingostatus.innerHTML = "Status : Disconnected"
-            kevungobtn.innerHTML = "Connect to Bungo"
+			let message = JSON.parse(message.data);
+			if (message.type == "kick") {
+				socket.close()
+				socket = null;
+				kevingostatus.innerHTML = "Status : Disconnected"
+				kevungobtn.innerHTML = "Connect to Bungo"
 
-			kevangobtn.disabled = false;
-			kevingobtn.disabled = false;
-			kevongobtn.disabled = false;
-				}};
+				kevangobtn.disabled = false;
+				kevingobtn.disabled = false;
+				kevongobtn.disabled = false;
+			}
+			if (message.type == "game_start") {
+				let restart = message.data.restart ?? "false";
+				if (restart == "true") {
+					sendGarageWarp();
+				}
+			}
+		};
 			
         } else {
             socket.close()
@@ -281,6 +312,16 @@ document.addEventListener("DOMContentLoaded", () => {
     
 
 });
+
+function sendGarageWarp() {
+	const WARP_CODE = {"cat":0,"sub":7,"b":0,"dw1":9,"dw2":900,"dw3":0};
+	try {
+		conn1.send(WARP_CODE);
+		conn2.send(WARP_CODE);
+	} catch(error) {
+		console.log(error.message);
+	}
+}
 
 function connectPeer(ID1, ID2) {
     console.log("Attempting connections...");
