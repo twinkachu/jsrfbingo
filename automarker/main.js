@@ -315,14 +315,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function sendGarageWarp() {
 	const WARP_CODE = {"cat":0,"sub":7,"b":0,"dw1":9,"dw2":900,"dw3":0};
-	// try {
-	console.log(conn1);
-		conn1.send(WARP_CODE);
-	console.log("Sent the code, I think!");
-		// conn2.send(WARP_CODE);
-	// } catch(error) {
-	// 	console.log(error.message);
-	// }
+	try {
+		conn1.send(JSON.stringify(WARP_CODE));
+		// conn2.send(JSON.stringify(WARP_CODE));
+	} catch(error) {
+		console.error("Failed to send:", error);
+		console.log("Connection State:", conn1 ? conn1.open : "Undefined");
+	}
 }
 
 function connectPeer(ID1, ID2) {
