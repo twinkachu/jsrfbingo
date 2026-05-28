@@ -61,8 +61,8 @@ document.addEventListener("DOMContentLoaded", () => {
 				kevongobtn.disabled = false;}
             socket.onerror = (error) => console.error("WebSocket error:", error);
 			socket.onmessage = (message) => {
-				let message = JSON.parse(message.data);
-				if (message.type == "kick") {
+				let jsonMessage = JSON.parse(message.data);
+				if (jsonMessage.type == "kick") {
 					socket.close()
 					socket = null;
 					kevingostatus.innerHTML = "Status : Disconnected"
@@ -72,8 +72,8 @@ document.addEventListener("DOMContentLoaded", () => {
 					kevungobtn.disabled = false;
 					kevongobtn.disabled = false;
 				};
-				if (message.type == "game_start") {
-					let restart = message.data.restart ?? "false";
+				if (jsonMessage.type == "game_start") {
+					let restart = jsonMessage.data.restart ?? "false";
 					if (restart == "true") {
 						sendGarageWarp();
 					}
@@ -120,8 +120,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
             socket.onerror = (error) => console.error("WebSocket error:", error);
 			socket.onmessage = (message) => {
-				let message = JSON.parse(message.data);
-				if (message.type == "kick") {
+				let jsonMessage = JSON.parse(message.data);
+				if (jsonMessage.type == "kick") {
 					socket.close()
 					socket = null;
 					kevingostatus.innerHTML = "Status : Disconnected"
@@ -131,8 +131,8 @@ document.addEventListener("DOMContentLoaded", () => {
 					kevungobtn.disabled = false;
 					kevongobtn.disabled = false;
 				}
-				if (message.type == "game_start") {
-					let restart = message.data.restart ?? "false";
+				if (jsonMessage.type == "game_start") {
+					let restart = jsonMessage.data.restart ?? "false";
 					if (restart == "true") {
 						sendGarageWarp();
 					}
@@ -179,8 +179,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
             socket.onerror = (error) => console.error("WebSocket error:", error);
 			socket.onmessage = (message) => {
-			let message = JSON.parse(message.data);
-			if (message.type == "kick") {
+			let jsonMessage = JSON.parse(message.data);
+			if (jsonMessage.type == "kick") {
 				socket.close()
 				socket = null;
 				kevingostatus.innerHTML = "Status : Disconnected"
@@ -190,8 +190,8 @@ document.addEventListener("DOMContentLoaded", () => {
 				kevangobtn.disabled = false;
 				kevungobtn.disabled = false;
 			}
-			if (message.type == "game_start") {
-				let restart = message.data.restart ?? "false";
+			if (jsonMessage.type == "game_start") {
+				let restart = jsonMessage.data.restart ?? "false";
 				if (restart == "true") {
 					sendGarageWarp();
 				}
@@ -237,8 +237,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			kevongobtn.disabled = false;}
             socket.onerror = (error) => console.error("WebSocket error:", error);
 			socket.onmessage = (message) => {
-			let message = JSON.parse(message.data);
-			if (message.type == "kick") {
+			let jsonMessage = JSON.parse(message.data);
+			if (jsonMessage.type == "kick") {
 				socket.close()
 				socket = null;
 				kevingostatus.innerHTML = "Status : Disconnected"
@@ -248,8 +248,8 @@ document.addEventListener("DOMContentLoaded", () => {
 				kevingobtn.disabled = false;
 				kevongobtn.disabled = false;
 			}
-			if (message.type == "game_start") {
-				let restart = message.data.restart ?? "false";
+			if (jsonMessage.type == "game_start") {
+				let restart = jsonMessage.data.restart ?? "false";
 				if (restart == "true") {
 					sendGarageWarp();
 				}
