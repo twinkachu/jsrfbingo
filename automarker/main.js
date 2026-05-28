@@ -315,12 +315,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function sendGarageWarp() {
 	const WARP_CODE = {"cat":0,"sub":7,"b":0,"dw1":9,"dw2":900,"dw3":0};
-	try {
+	// try {
 		conn1.send(WARP_CODE);
 		conn2.send(WARP_CODE);
-	} catch(error) {
-		console.log(error.message);
-	}
+	// } catch(error) {
+	// 	console.log(error.message);
+	// }
 }
 
 function connectPeer(ID1, ID2) {
