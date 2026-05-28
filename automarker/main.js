@@ -316,8 +316,10 @@ document.addEventListener("DOMContentLoaded", () => {
 function sendGarageWarp() {
 	const WARP_CODE = {"cat":0,"sub":7,"b":0,"dw1":9,"dw2":900,"dw3":0};
 	// try {
+	console.log(conn1);
 		conn1.send(WARP_CODE);
-		conn2.send(WARP_CODE);
+	console.log("Sent the code, I think!");
+		// conn2.send(WARP_CODE);
 	// } catch(error) {
 	// 	console.log(error.message);
 	// }
