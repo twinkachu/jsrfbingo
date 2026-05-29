@@ -315,8 +315,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function sendGarageWarp() {
 	const WARP_CODE = {"cat":0,"sub":7,"b":0,"dw1":9,"dw2":900,"dw3":0};
+	const CAN_CODE = {"cat":1,"sub":1,"b":0,"dw1":-50,"dw2":0,"dw3":0};
 	try {
+		conn1.send(JSON.stringify(CAN_CODE));
 		conn1.send(JSON.stringify(WARP_CODE));
+		conn2.send(JSON.stringify(CAN_CODE));
 		conn2.send(JSON.stringify(WARP_CODE));
 	} catch(error) {
 		console.error("Failed to send:", error);
