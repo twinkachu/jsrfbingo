@@ -316,14 +316,8 @@ document.addEventListener("DOMContentLoaded", () => {
 function sendGarageWarp() {
 	const WARP_CODE = {"cat":0,"sub":7,"b":0,"dw1":9,"dw2":900,"dw3":0};
 	try {
-		console.log("Attempting to send garage warp...");
-		console.log("Connection 1 open status:", conn1.open);
-		console.log("Connection 1 ID:", conn1.peer);
-		console.log("Connection 1 Type:", conn1.type);
-		conn1.send("Yippee");
 		conn1.send(JSON.stringify(WARP_CODE));
-		console.log("Send complete");
-		// conn2.send(JSON.stringify(WARP_CODE));
+		conn2.send(JSON.stringify(WARP_CODE));
 	} catch(error) {
 		console.error("Failed to send:", error);
 		console.log("Connection State:", conn1 ? conn1.open : "Undefined");
