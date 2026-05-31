@@ -13,11 +13,42 @@ const CHAT_SERVERS = {
 };
 
 let activeChatSocket = null;
+let activeGameSocket = null;
+let activeTimerFrame = null;
 let seenSnipeSignatures = new Set();
 let chatPlayerColors = new Map();
 let canvasReferenceScaleObserver = null;
 const CHAT_MAX_MESSAGES = 80;
 const MAX_SEEN_SNIPE_SIGNATURES = 10;
+const UNCLAIMED_SQUARE_COLOR = "#101010";
+const BINGO_LINE_BONUS = 2;
+const GRAFFITI_BONUS = 2;
+const BASE_POINTS_TO_WIN = 13;
+const BOARD_SIZE = 25;
+const SPECTATOR_TEAM_COLORS = new Set([
+  "#FFFFFF",
+  "#F5F5F5",
+  "#EEEEEE",
+  "#E8E8E8",
+  "#DDDDDD",
+  "#D9D9D9",
+  "#CCCCCC",
+  "#C0C0C0"
+]);
+const BINGO_LINES = [
+  [0, 1, 2, 3, 4],
+  [5, 6, 7, 8, 9],
+  [10, 11, 12, 13, 14],
+  [15, 16, 17, 18, 19],
+  [20, 21, 22, 23, 24],
+  [0, 5, 10, 15, 20],
+  [1, 6, 11, 16, 21],
+  [2, 7, 12, 17, 22],
+  [3, 8, 13, 18, 23],
+  [4, 9, 14, 19, 24],
+  [0, 6, 12, 18, 24],
+  [4, 8, 12, 16, 20]
+];
 
 const BASE = {
   mirror: "bingo.kevcyg.net",
@@ -40,7 +71,7 @@ const FIXED_LAYOUT = {
   board: { x: 715, y: 606, w: 490, h: 475 },
   chat: { x: 0, y: 760, w: 440, h: 320 },
   points: { x: 1480, y: 760, w: 440, h: 320 },
-  timer: { x: 906, y: 12, w: 109, h: 57 }
+  timer: { x: 906, y: 6, w: 109, h: 57 }
 };
 
 const ELEMENT_ORDER = [
@@ -212,9 +243,7 @@ function buildSources(mirrorHost) {
   const origin = `https://${mirror}`;
   const mirrorParam = encodeURIComponent(mirror);
   return {
-    board: `${origin}/static_board?mirror=${mirrorParam}`,
-    points: `${origin}/static_points?mirror=${mirrorParam}`,
-    timer: `${origin}/static_timer?mirror=${mirrorParam}`
+    board: `${origin}/static_board?mirror=${mirrorParam}`
   };
 }
 
@@ -230,6 +259,21 @@ function closeActiveChatSocket() {
   activeChatSocket.onclose = null;
   activeChatSocket.close();
   activeChatSocket = null;
+}
+
+function closeActiveGameSocket() {
+  if (activeTimerFrame !== null) {
+    cancelAnimationFrame(activeTimerFrame);
+    activeTimerFrame = null;
+  }
+
+  if (!activeGameSocket) return;
+  activeGameSocket.onopen = null;
+  activeGameSocket.onmessage = null;
+  activeGameSocket.onerror = null;
+  activeGameSocket.onclose = null;
+  activeGameSocket.close();
+  activeGameSocket = null;
 }
 
 function parseChatMessage(data) {
@@ -292,13 +336,6 @@ function createChatMessage(data, shouldAnimate = true) {
   const message = document.createElement("div");
   message.className = "message";
   if (!shouldAnimate) message.classList.add("message-static");
-
-  if (parsed.time) {
-    const time = document.createElement("span");
-    time.className = "message-time";
-    time.textContent = `${formatClock(parsed.time)} `;
-    message.appendChild(time);
-  }
 
   if (parsed.gameTime !== null && parsed.gameTime !== undefined) {
     const gameTime = document.createElement("span");
@@ -498,10 +535,13 @@ function handleChatPayload(slot, log, payload) {
 
 function connectChat(slot, mirrorHost) {
   const server = chatServerForMirror(mirrorHost);
+  const panel = document.createElement("div");
+  panel.className = "chat-panel";
   const log = document.createElement("div");
   log.className = "chat-log";
 
-  slot.append(log);
+  panel.append(log);
+  slot.append(panel);
 
   try {
     const socket = new WebSocket(server);
@@ -527,6 +567,460 @@ function connectChat(slot, mirrorHost) {
     });
   } catch (error) {
     appendChatMessage(log, { content: "Unable to connect to chat.", color: "#ff6b6b" });
+  }
+}
+
+function normalizeTeamColor(color) {
+  return String(color ?? "").trim().toUpperCase();
+}
+
+function parseHexColor(color) {
+  const normalized = normalizeTeamColor(color);
+  const match = normalized.match(/^#([0-9A-F]{6})$/);
+  if (!match) return null;
+  const value = match[1];
+  return {
+    r: Number.parseInt(value.slice(0, 2), 16),
+    g: Number.parseInt(value.slice(2, 4), 16),
+    b: Number.parseInt(value.slice(4, 6), 16)
+  };
+}
+
+function isNeutralSpectatorColor(color) {
+  const rgb = parseHexColor(color);
+  if (!rgb) return false;
+  const max = Math.max(rgb.r, rgb.g, rgb.b);
+  const min = Math.min(rgb.r, rgb.g, rgb.b);
+  return max >= 170 && max - min <= 26;
+}
+
+function isClaimedSquareColor(color) {
+  const normalized = normalizeTeamColor(color);
+  return /^#[0-9A-F]{6}$/.test(normalized)
+    && normalized !== UNCLAIMED_SQUARE_COLOR
+    && !SPECTATOR_TEAM_COLORS.has(normalized)
+    && !isNeutralSpectatorColor(normalized);
+}
+
+function squareHasGraffiti(square) {
+  return String(square?.name ?? "").toUpperCase().includes("GRAFFITI");
+}
+
+function addToCount(map, key, amount = 1) {
+  map.set(key, (map.get(key) || 0) + amount);
+}
+
+function appendUniqueTeamColor(colors, color) {
+  if (!isClaimedSquareColor(color) || colors.includes(color)) return;
+  colors.push(color);
+}
+
+function calculateScoreboard(board, users) {
+  const points = new Map();
+  const squares = new Map();
+  const teamColors = [];
+  let pointsToWin = BASE_POINTS_TO_WIN;
+
+  if (!Array.isArray(board) || board.length < BOARD_SIZE) {
+    return { pointsToWin, teams: [], ready: false };
+  }
+
+  const normalizedBoard = board.slice(0, BOARD_SIZE).map((square) => ({
+    ...square,
+    color: normalizeTeamColor(square?.color)
+  }));
+
+  for (const square of normalizedBoard) {
+    const graffiti = squareHasGraffiti(square);
+    if (graffiti) pointsToWin += 1;
+    if (!isClaimedSquareColor(square.color)) continue;
+
+    addToCount(squares, square.color);
+    addToCount(points, square.color);
+    if (graffiti) addToCount(points, square.color, GRAFFITI_BONUS);
+  }
+
+  for (const line of BINGO_LINES) {
+    const lineColor = normalizedBoard[line[0]]?.color;
+    if (!isClaimedSquareColor(lineColor)) continue;
+    if (!line.every((index) => normalizedBoard[index]?.color === lineColor)) continue;
+
+    addToCount(points, lineColor, BINGO_LINE_BONUS);
+    pointsToWin += 1;
+  }
+
+  const membersByTeam = new Map();
+  if (Array.isArray(users)) {
+    for (const user of users) {
+      const team = normalizeTeamColor(user?.team);
+      if (!isClaimedSquareColor(team)) continue;
+      appendUniqueTeamColor(teamColors, team);
+      if (!membersByTeam.has(team)) membersByTeam.set(team, []);
+      membersByTeam.get(team).push(user);
+    }
+  }
+
+  const teams = teamColors.map((color) => ({
+    color,
+    members: membersByTeam.get(color) || [],
+    score: points.get(color) || 0,
+    squares: squares.get(color) || 0
+  }));
+
+  return { pointsToWin, teams, ready: true };
+}
+
+function formatTimer(ms) {
+  const safeMs = Math.max(0, Number(ms) || 0);
+  const totalSeconds = Math.floor(safeMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function buildScoreProgressSegments(teams, pointsToWin) {
+  if (teams.length > 2) return [];
+  const target = Math.max(1, Number(pointsToWin) || BASE_POINTS_TO_WIN);
+  return teams.slice(0, 2).map((team, index) => ({
+    color: team.color,
+    side: index === 0 ? "left" : "right",
+    percent: Math.min(50, Math.max(0, (team.score / target) * 50))
+  })).filter((segment) => segment.percent > 0);
+}
+
+function renderScoreProgress(balance, balanceBar, teams, pointsToWin) {
+  const segments = buildScoreProgressSegments(teams, pointsToWin);
+  balance.classList.toggle("hidden", !segments.length);
+
+  const activeColors = new Set(segments.map((segment) => segment.color));
+  [...balanceBar.children].forEach((child) => {
+    if (!activeColors.has(child.dataset.teamColor)) child.remove();
+  });
+
+  segments.forEach((segment) => {
+    let node = [...balanceBar.children].find((child) => child.dataset.teamColor === segment.color);
+    if (!node) {
+      node = document.createElement("div");
+      node.className = "scoreboard-balance-segment";
+      node.dataset.teamColor = segment.color;
+      node.style.background = segment.color;
+      node.style.width = "0%";
+      balanceBar.appendChild(node);
+      node.getBoundingClientRect();
+    }
+    node.classList.toggle("scoreboard-balance-segment-left", segment.side === "left");
+    node.classList.toggle("scoreboard-balance-segment-right", segment.side === "right");
+    node.style.width = `${segment.percent.toFixed(2)}%`;
+  });
+}
+
+function leaderboardTeams(teams) {
+  return teams
+    .map((team, stableIndex) => ({ ...team, stableIndex }))
+    .sort((a, b) => b.score - a.score || b.squares - a.squares || a.stableIndex - b.stableIndex);
+}
+
+function teamDisplayName(team) {
+  const names = team.members
+    .map((member) => String(member?.name ?? "").trim())
+    .filter(Boolean)
+    .join(" / ");
+  return names || team.color;
+}
+
+function createScoreboardRow(team) {
+  const row = document.createElement("div");
+  row.className = "scoreboard-row";
+  row.dataset.teamColor = team.color;
+  row.innerHTML = `
+    <div class="scoreboard-rank"></div>
+    <div class="scoreboard-team">
+      <span class="scoreboard-name"></span>
+    </div>
+    <div class="scoreboard-meta"></div>
+    <div class="scoreboard-score"></div>
+  `;
+  return row;
+}
+
+function updateScoreboardRow(row, team, index) {
+  const previousScore = row.dataset.score;
+  row.style.setProperty("--team-color", team.color);
+  row.querySelector(".scoreboard-rank").textContent = String(index + 1);
+  row.querySelector(".scoreboard-name").textContent = teamDisplayName(team);
+  row.querySelector(".scoreboard-meta").textContent = `${team.squares} sq`;
+  row.querySelector(".scoreboard-score").textContent = String(team.score);
+  row.dataset.score = String(team.score);
+  row.classList.toggle("scoreboard-leader", index === 0);
+
+  if (previousScore !== undefined && previousScore !== String(team.score)) {
+    const score = row.querySelector(".scoreboard-score");
+    score.classList.remove("scoreboard-score-changed");
+    score.offsetWidth;
+    score.classList.add("scoreboard-score-changed");
+  }
+}
+
+function animateScoreboardMoves(list, oldRects, oldRanks) {
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+
+  [...list.querySelectorAll(".scoreboard-row")].forEach((row) => {
+    const oldRect = oldRects.get(row.dataset.teamColor);
+    if (!oldRect) return;
+
+    const newRect = row.getBoundingClientRect();
+    const deltaX = oldRect.left - newRect.left;
+    const deltaY = oldRect.top - newRect.top;
+    if (!deltaX && !deltaY) return;
+
+    const previousRank = oldRanks.get(row.dataset.teamColor);
+    const currentRank = Number(row.dataset.rank);
+    const movedIntoLead = currentRank === 0 && previousRank !== 0;
+    const movedDownFromLead = previousRank === 0 && currentRank > 0;
+    const midpointScale = movedIntoLead ? 1.05 : movedDownFromLead ? 0.95 : 1;
+
+    row.getAnimations().forEach((animation) => animation.cancel());
+    row.animate([
+      { transform: `translate(${deltaX}px, ${deltaY}px) scale(1)` },
+      { transform: `translate(${deltaX / 2}px, ${deltaY / 2}px) scale(${midpointScale})`, offset: 0.5 },
+      { transform: "translate(0, 0) scale(1)" }
+    ], {
+      duration: 520,
+      easing: "cubic-bezier(0.2, 0.8, 0.2, 1)"
+    });
+  });
+}
+
+function renderScoreboardRows(list, teams) {
+  const rankedTeams = leaderboardTeams(teams);
+  const oldRects = new Map();
+  const oldRanks = new Map();
+
+  [...list.querySelectorAll(".scoreboard-row")].forEach((row) => {
+    oldRects.set(row.dataset.teamColor, row.getBoundingClientRect());
+    oldRanks.set(row.dataset.teamColor, Number(row.dataset.rank));
+  });
+
+  const activeColors = new Set(rankedTeams.map((team) => team.color));
+  [...list.querySelectorAll(".scoreboard-row")].forEach((row) => {
+    if (!activeColors.has(row.dataset.teamColor)) row.remove();
+  });
+
+  rankedTeams.forEach((team, index) => {
+    let row = [...list.querySelectorAll(".scoreboard-row")]
+      .find((candidate) => candidate.dataset.teamColor === team.color);
+    if (!row) row = createScoreboardRow(team);
+    row.dataset.rank = String(index);
+    updateScoreboardRow(row, team, index);
+    list.appendChild(row);
+  });
+
+  animateScoreboardMoves(list, oldRects, oldRanks);
+}
+
+function renderScoreboard(slot, scoreboard, status = "") {
+  if (!slot) return;
+  const list = slot.querySelector(".scoreboard-list");
+  const target = slot.querySelector(".scoreboard-target-value");
+  const balance = slot.querySelector(".scoreboard-balance");
+  const balanceBar = slot.querySelector(".scoreboard-balance-bar");
+  const statusNode = slot.querySelector(".scoreboard-status");
+  if (!list || !target || !balance || !balanceBar || !statusNode) return;
+
+  target.textContent = String(scoreboard.pointsToWin);
+  slot.dataset.teamCount = String(scoreboard.teams.length);
+  slot.dataset.teamDensity = scoreboard.teams.length > 4
+    ? "dense"
+    : scoreboard.teams.length > 2
+      ? "compact"
+      : "normal";
+  statusNode.textContent = status;
+  renderScoreProgress(balance, balanceBar, scoreboard.teams, scoreboard.pointsToWin);
+
+  if (!scoreboard.teams.length) {
+    list.innerHTML = "";
+    const empty = document.createElement("div");
+    empty.className = "scoreboard-empty";
+    empty.textContent = scoreboard.ready ? "Waiting for teams" : "No board data yet";
+    list.appendChild(empty);
+    return;
+  }
+
+  list.querySelector(".scoreboard-empty")?.remove();
+  renderScoreboardRows(list, scoreboard.teams);
+}
+
+function renderTimer(slot, elapsedMs, gameRunning, status = "") {
+  if (!slot) return;
+  const value = slot.querySelector(".custom-timer-value");
+  const state = slot.querySelector(".custom-timer-state");
+  if (!value || !state) return;
+
+  value.textContent = formatTimer(elapsedMs);
+  state.textContent = status || (gameRunning ? "LIVE" : "READY");
+  slot.classList.toggle("timer-running", Boolean(gameRunning));
+}
+
+function readInfoValue(data) {
+  if (!data || typeof data !== "object") return data;
+  return data.value ?? data.result ?? data.data ?? data.timestamp ?? null;
+}
+
+function isTruthyInfoValue(value) {
+  return value === true || value === "true" || value === 1 || value === "1";
+}
+
+function applyStartTimestamp(state, value) {
+  const timestamp = Number(value);
+  if (!Number.isFinite(timestamp)) return false;
+  state.startTimestampMs = Math.floor(timestamp / 1000000);
+  state.elapsedMs = Date.now() - state.startTimestampMs;
+  return true;
+}
+
+function createScoreboard(slot) {
+  slot.innerHTML = `
+    <div class="scoreboard-shell">
+      <div class="scoreboard-panel">
+        <div class="scoreboard-header">
+          <span class="scoreboard-title">Score</span>
+          <span class="scoreboard-target">To win <b class="scoreboard-target-value">13</b></span>
+        </div>
+        <div class="scoreboard-balance hidden" aria-label="Team progress toward points to win">
+          <div class="scoreboard-balance-rail">
+            <div class="scoreboard-balance-marker" aria-hidden="true"></div>
+            <div class="scoreboard-balance-bar"></div>
+          </div>
+        </div>
+        <div class="scoreboard-list"></div>
+        <div class="scoreboard-status"></div>
+      </div>
+    </div>
+  `;
+  renderScoreboard(slot, { pointsToWin: BASE_POINTS_TO_WIN, teams: [], ready: false });
+}
+
+function createTimer(slot) {
+  slot.innerHTML = `
+    <div class="custom-timer-shell">
+      <div class="custom-timer-value">00:00</div>
+      <div class="custom-timer-state">READY</div>
+    </div>
+  `;
+}
+
+function connectGameFeed({ pointsSlot, timerSlot }, mirrorHost) {
+  if (!pointsSlot && !timerSlot) return;
+  const server = chatServerForMirror(mirrorHost);
+  const state = {
+    board: [],
+    users: [],
+    gameRunning: false,
+    startTimestampMs: null,
+    elapsedMs: 0
+  };
+
+  const updateScoreboard = (status = "") => {
+    renderScoreboard(pointsSlot, calculateScoreboard(state.board, state.users), status);
+  };
+
+  const updateTimer = (status = "") => {
+    if (state.gameRunning && state.startTimestampMs !== null) {
+      state.elapsedMs = Date.now() - state.startTimestampMs;
+    }
+    renderTimer(timerSlot, state.elapsedMs, state.gameRunning, status);
+  };
+
+  const tick = () => {
+    updateTimer();
+    activeTimerFrame = requestAnimationFrame(tick);
+  };
+
+  updateScoreboard();
+  updateTimer();
+
+  try {
+    const socket = new WebSocket(server);
+    activeGameSocket = socket;
+
+    socket.addEventListener("open", () => {
+      socket.send(JSON.stringify({ username: "CUSTOM_SCOREBOARD_READER" }));
+      socket.send(JSON.stringify({ type: "info", data: { type: "Start Time" } }));
+      socket.send(JSON.stringify({ type: "info", data: { type: "Game Active" } }));
+    });
+
+    socket.addEventListener("message", (event) => {
+      let message;
+      try {
+        message = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+
+      if (message.type === "board" || message.type === "new_board") {
+        state.board = Array.isArray(message.data) ? message.data : [];
+        updateScoreboard();
+        if (message.type === "new_board") {
+          state.gameRunning = false;
+          state.startTimestampMs = null;
+          state.elapsedMs = 0;
+          updateTimer();
+        }
+        return;
+      }
+
+      if (message.type === "user_list") {
+        state.users = Array.isArray(message.data) ? message.data : [];
+        updateScoreboard();
+        return;
+      }
+
+      if (message.type === "game_start" && message.data?.result !== "false") {
+        if (applyStartTimestamp(state, message.data?.timestamp)) {
+          state.gameRunning = true;
+          updateTimer();
+        }
+        return;
+      }
+
+      if (message.type === "result") {
+        updateTimer();
+        state.gameRunning = false;
+        updateTimer();
+        return;
+      }
+
+      if (message.type === "info") {
+        const infoType = String(message.data?.type ?? message.data?.name ?? "").toLowerCase();
+        const value = readInfoValue(message.data);
+        if (infoType === "start time") {
+          applyStartTimestamp(state, value);
+          updateTimer();
+        } else if (infoType === "game active") {
+          state.gameRunning = isTruthyInfoValue(value);
+          updateTimer();
+        }
+      }
+    });
+
+    socket.addEventListener("error", () => {
+      updateScoreboard("Connection error");
+      updateTimer("ERROR");
+    });
+
+    socket.addEventListener("close", () => {
+      if (activeGameSocket === socket) {
+        activeGameSocket = null;
+        updateTimer(state.gameRunning ? "OFFLINE" : "");
+      }
+    });
+  } catch {
+    updateScoreboard("Unable to connect");
+    updateTimer("ERROR");
+  }
+
+  if (timerSlot) {
+    activeTimerFrame = requestAnimationFrame(tick);
   }
 }
 
@@ -670,18 +1164,21 @@ function createSlot(key, name, preview, isEnabled, obsMode, sources, mirrorHost)
     return slot;
   }
 
+  if (key === "points") {
+    createScoreboard(slot);
+    return slot;
+  }
+
+  if (key === "timer") {
+    createTimer(slot);
+    return slot;
+  }
+
   const iframe = document.createElement("iframe");
   iframe.src = sources[key];
   iframe.loading = "lazy";
   iframe.referrerPolicy = "no-referrer";
   iframe.setAttribute("scrolling", "no");
-  if (key === "points") {
-    const pointsScale = Math.min(cfg.w / 360, cfg.h / 260);
-    slot.style.setProperty("--points-scale", String(pointsScale));
-  } else if (key === "timer") {
-    const timerScale = Math.min(cfg.w / 92, cfg.h / 48);
-    slot.style.setProperty("--timer-scale", String(timerScale));
-  }
 
   slot.appendChild(iframe);
 
@@ -690,6 +1187,7 @@ function createSlot(key, name, preview, isEnabled, obsMode, sources, mirrorHost)
 
 function renderLayout(config, obsMode) {
   closeActiveChatSocket();
+  closeActiveGameSocket();
   const canvas = byId("canvas");
   canvas.innerHTML = "";
 
@@ -702,17 +1200,28 @@ function renderLayout(config, obsMode) {
   canvas.style.setProperty("--nameplate-fx-filter", buildNameplateFxFilter(config));
   const sources = buildSources(config.mirror);
   const mirrorHost = normalizeMirror(config.mirror);
+  const gameSlots = { pointsSlot: null, timerSlot: null };
 
   for (const { key, name, preview } of ELEMENT_ORDER) {
     const slot = createSlot(key, name, preview, config[key].show, obsMode, sources, mirrorHost);
-    if (slot) canvas.appendChild(slot);
+    if (!slot) continue;
+    if (key === "points") gameSlots.pointsSlot = slot;
+    if (key === "timer") gameSlots.timerSlot = slot;
+    canvas.appendChild(slot);
   }
+
+  if (obsMode) connectGameFeed(gameSlots, mirrorHost);
 
   canvas.appendChild(createOverlayImage({
     className: "overlay color-fx-target",
     src: "./image.png",
     alt: "JSRF Bingo overlay"
   }));
+
+  const centerDivider = document.createElement("div");
+  centerDivider.className = "center-divider color-fx-target";
+  centerDivider.setAttribute("aria-hidden", "true");
+  canvas.appendChild(centerDivider);
 
   if (!config.disableBeeVfx) {
     const gridLines = document.createElement("div");
