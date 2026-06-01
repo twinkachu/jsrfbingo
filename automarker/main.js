@@ -277,7 +277,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let ID2 = [];
     
 
-        if (multilink1.includes("https://jsrfmulti.surge.sh/bingo/?connect=")) {
+        if (multilink1.includes("connect=")) {
             let connectId1 = new URL(multilink1).searchParams.get('connect');
             if (connectId1) {
                 ID1.push(connectId1, "team1");
@@ -293,7 +293,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
         if (multilink2 === "") {
             multistatus2.innerHTML = "Team 2 : No Link";
-        } else if (multilink2.includes("https://jsrfmulti.surge.sh/bingo/?connect=")) {
+        } else if (multilink2.includes("connect=")) {
             let connectId2 = new URL(multilink2).searchParams.get('connect');
             if (connectId2) {
                 ID2.push(connectId2, "team2");
