@@ -12,8 +12,7 @@ const CHAT_SERVERS = {
   "bungo.kevcyg.net": "wss://chut.kevcyg.net"
 };
 
-let activeChatSocket = null;
-let activeGameSocket = null;
+let activeFeedSocket = null;
 let activeTimerFrame = null;
 let seenSnipeSignatures = new Set();
 let chatPlayerColors = new Map();
@@ -165,10 +164,10 @@ function setPageMode(obsMode) {
   const previewMeta = byId("previewMeta");
 
   document.body.classList.toggle("obs-mode", obsMode);
-  appRoot.className = obsMode ? "obs-only" : "app";
-  panel.classList.toggle("hidden", obsMode);
-  previewTitle.classList.toggle("hidden", obsMode);
-  previewMeta.classList.toggle("hidden", obsMode);
+  if (appRoot) appRoot.className = obsMode ? "obs-only" : "app";
+  panel?.classList.toggle("hidden", obsMode);
+  previewTitle?.classList.toggle("hidden", obsMode);
+  previewMeta?.classList.toggle("hidden", obsMode);
 }
 
 function createOverlayImage({ className, src, alt }) {
@@ -251,29 +250,19 @@ function chatServerForMirror(mirrorHost) {
   return CHAT_SERVERS[normalizeMirror(mirrorHost)];
 }
 
-function closeActiveChatSocket() {
-  if (!activeChatSocket) return;
-  activeChatSocket.onopen = null;
-  activeChatSocket.onmessage = null;
-  activeChatSocket.onerror = null;
-  activeChatSocket.onclose = null;
-  activeChatSocket.close();
-  activeChatSocket = null;
-}
-
-function closeActiveGameSocket() {
+function closeActiveFeedSocket() {
   if (activeTimerFrame !== null) {
     cancelAnimationFrame(activeTimerFrame);
     activeTimerFrame = null;
   }
 
-  if (!activeGameSocket) return;
-  activeGameSocket.onopen = null;
-  activeGameSocket.onmessage = null;
-  activeGameSocket.onerror = null;
-  activeGameSocket.onclose = null;
-  activeGameSocket.close();
-  activeGameSocket = null;
+  if (!activeFeedSocket) return;
+  activeFeedSocket.onopen = null;
+  activeFeedSocket.onmessage = null;
+  activeFeedSocket.onerror = null;
+  activeFeedSocket.onclose = null;
+  activeFeedSocket.close();
+  activeFeedSocket = null;
 }
 
 function parseChatMessage(data) {
@@ -327,6 +316,13 @@ function formatGameTime(value) {
   const minutes = Math.floor(total / 60);
   const seconds = total % 60;
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function gameTimeSecondsFromMessage(message) {
+  const value = message?.in_game_time;
+  if (value === null || value === undefined || value === "") return null;
+  const seconds = Number(value);
+  return Number.isFinite(seconds) && seconds >= 0 ? seconds : null;
 }
 
 function createChatMessage(data, shouldAnimate = true) {
@@ -533,8 +529,7 @@ function handleChatPayload(slot, log, payload) {
   }
 }
 
-function connectChat(slot, mirrorHost) {
-  const server = chatServerForMirror(mirrorHost);
+function createChat(slot) {
   const panel = document.createElement("div");
   panel.className = "chat-panel";
   const log = document.createElement("div");
@@ -542,32 +537,7 @@ function connectChat(slot, mirrorHost) {
 
   panel.append(log);
   slot.append(panel);
-
-  try {
-    const socket = new WebSocket(server);
-    activeChatSocket = socket;
-
-    socket.addEventListener("open", () => {
-      const username = `CHAT_READER_${Math.random().toString(36).slice(2, 8)}`;
-      socket.send(JSON.stringify({ username }));
-    });
-
-    socket.addEventListener("message", (event) => {
-      handleChatPayload(slot, log, event.data);
-    });
-
-    socket.addEventListener("error", () => {
-      appendChatMessage(log, { content: "Chat connection error.", color: "#ff6b6b" });
-    });
-
-    socket.addEventListener("close", () => {
-      if (activeChatSocket === socket) {
-        activeChatSocket = null;
-      }
-    });
-  } catch (error) {
-    appendChatMessage(log, { content: "Unable to connect to chat.", color: "#ff6b6b" });
-  }
+  return log;
 }
 
 function normalizeTeamColor(color) {
@@ -870,11 +840,35 @@ function isTruthyInfoValue(value) {
   return value === true || value === "true" || value === 1 || value === "1";
 }
 
-function applyStartTimestamp(state, value) {
+function serverTimestampToMs(value) {
   const timestamp = Number(value);
-  if (!Number.isFinite(timestamp)) return false;
-  state.startTimestampMs = Math.floor(timestamp / 1000000);
-  state.elapsedMs = Date.now() - state.startTimestampMs;
+  if (!Number.isFinite(timestamp)) return null;
+  return Math.floor(timestamp / 1000000);
+}
+
+function applyStartTimestamp(state, value) {
+  const startTimestampMs = serverTimestampToMs(value);
+  if (startTimestampMs === null) return false;
+
+  let elapsedMs = Date.now() - startTimestampMs;
+  if (Number.isFinite(state.minimumElapsedMs)) {
+    elapsedMs = Math.max(elapsedMs, state.minimumElapsedMs);
+  }
+
+  state.startClientMs = performance.now() - Math.max(0, elapsedMs);
+  state.elapsedMs = Math.max(0, elapsedMs);
+  return true;
+}
+
+function applyMinimumElapsed(state, elapsedMs) {
+  if (!Number.isFinite(elapsedMs) || elapsedMs < 0) return false;
+  state.minimumElapsedMs = Math.max(state.minimumElapsedMs || 0, elapsedMs);
+  if (state.elapsedMs >= state.minimumElapsedMs) return false;
+
+  state.elapsedMs = state.minimumElapsedMs;
+  if (state.gameRunning) {
+    state.startClientMs = performance.now() - state.elapsedMs;
+  }
   return true;
 }
 
@@ -909,14 +903,16 @@ function createTimer(slot) {
   `;
 }
 
-function connectGameFeed({ pointsSlot, timerSlot }, mirrorHost) {
-  if (!pointsSlot && !timerSlot) return;
+function connectGameFeed({ chatSlot, pointsSlot, timerSlot }, mirrorHost) {
+  if (!chatSlot && !pointsSlot && !timerSlot) return;
   const server = chatServerForMirror(mirrorHost);
+  const chatLog = chatSlot ? createChat(chatSlot) : null;
   const state = {
     board: [],
     users: [],
     gameRunning: false,
-    startTimestampMs: null,
+    startClientMs: null,
+    minimumElapsedMs: 0,
     elapsedMs: 0
   };
 
@@ -925,8 +921,8 @@ function connectGameFeed({ pointsSlot, timerSlot }, mirrorHost) {
   };
 
   const updateTimer = (status = "") => {
-    if (state.gameRunning && state.startTimestampMs !== null) {
-      state.elapsedMs = Date.now() - state.startTimestampMs;
+    if (state.gameRunning && state.startClientMs !== null) {
+      state.elapsedMs = performance.now() - state.startClientMs;
     }
     renderTimer(timerSlot, state.elapsedMs, state.gameRunning, status);
   };
@@ -941,19 +937,33 @@ function connectGameFeed({ pointsSlot, timerSlot }, mirrorHost) {
 
   try {
     const socket = new WebSocket(server);
-    activeGameSocket = socket;
+    activeFeedSocket = socket;
 
     socket.addEventListener("open", () => {
-      socket.send(JSON.stringify({ username: "CUSTOM_SCOREBOARD_READER" }));
+      socket.send(JSON.stringify({ username: "CUSTOM_OVERLAY_READER" }));
       socket.send(JSON.stringify({ type: "info", data: { type: "Start Time" } }));
       socket.send(JSON.stringify({ type: "info", data: { type: "Game Active" } }));
     });
 
     socket.addEventListener("message", (event) => {
+      if (activeFeedSocket !== socket) return;
+
       let message;
       try {
         message = JSON.parse(event.data);
       } catch {
+        return;
+      }
+
+      if (message.type === "message") {
+        const seconds = gameTimeSecondsFromMessage(message.data);
+        if (seconds !== null && applyMinimumElapsed(state, seconds * 1000)) {
+          updateTimer();
+        }
+      }
+
+      if (chatSlot && ["history", "message", "snipe", "notification"].includes(message.type)) {
+        handleChatPayload(chatSlot, chatLog, event.data);
         return;
       }
 
@@ -962,7 +972,8 @@ function connectGameFeed({ pointsSlot, timerSlot }, mirrorHost) {
         updateScoreboard();
         if (message.type === "new_board") {
           state.gameRunning = false;
-          state.startTimestampMs = null;
+          state.startClientMs = null;
+          state.minimumElapsedMs = 0;
           state.elapsedMs = 0;
           updateTimer();
         }
@@ -976,6 +987,7 @@ function connectGameFeed({ pointsSlot, timerSlot }, mirrorHost) {
       }
 
       if (message.type === "game_start" && message.data?.result !== "false") {
+        state.minimumElapsedMs = 0;
         if (applyStartTimestamp(state, message.data?.timestamp)) {
           state.gameRunning = true;
           updateTimer();
@@ -991,8 +1003,9 @@ function connectGameFeed({ pointsSlot, timerSlot }, mirrorHost) {
       }
 
       if (message.type === "info") {
-        const infoType = String(message.data?.type ?? message.data?.name ?? "").toLowerCase();
-        const value = readInfoValue(message.data);
+        const info = parseMaybeJson(message.data);
+        const infoType = String(info?.type ?? info?.name ?? "").toLowerCase();
+        const value = readInfoValue(info);
         if (infoType === "start time") {
           applyStartTimestamp(state, value);
           updateTimer();
@@ -1006,17 +1019,19 @@ function connectGameFeed({ pointsSlot, timerSlot }, mirrorHost) {
     socket.addEventListener("error", () => {
       updateScoreboard("Connection error");
       updateTimer("ERROR");
+      if (chatLog) appendChatMessage(chatLog, { content: "Chat connection error.", color: "#ff6b6b" });
     });
 
     socket.addEventListener("close", () => {
-      if (activeGameSocket === socket) {
-        activeGameSocket = null;
+      if (activeFeedSocket === socket) {
+        activeFeedSocket = null;
         updateTimer(state.gameRunning ? "OFFLINE" : "");
       }
     });
   } catch {
     updateScoreboard("Unable to connect");
     updateTimer("ERROR");
+    if (chatLog) appendChatMessage(chatLog, { content: "Unable to connect to chat.", color: "#ff6b6b" });
   }
 
   if (timerSlot) {
@@ -1160,7 +1175,6 @@ function createSlot(key, name, preview, isEnabled, obsMode, sources, mirrorHost)
   }
 
   if (key === "chat") {
-    connectChat(slot, mirrorHost);
     return slot;
   }
 
@@ -1186,8 +1200,7 @@ function createSlot(key, name, preview, isEnabled, obsMode, sources, mirrorHost)
 }
 
 function renderLayout(config, obsMode) {
-  closeActiveChatSocket();
-  closeActiveGameSocket();
+  closeActiveFeedSocket();
   const canvas = byId("canvas");
   canvas.innerHTML = "";
 
@@ -1200,11 +1213,12 @@ function renderLayout(config, obsMode) {
   canvas.style.setProperty("--nameplate-fx-filter", buildNameplateFxFilter(config));
   const sources = buildSources(config.mirror);
   const mirrorHost = normalizeMirror(config.mirror);
-  const gameSlots = { pointsSlot: null, timerSlot: null };
+  const gameSlots = { chatSlot: null, pointsSlot: null, timerSlot: null };
 
   for (const { key, name, preview } of ELEMENT_ORDER) {
     const slot = createSlot(key, name, preview, config[key].show, obsMode, sources, mirrorHost);
     if (!slot) continue;
+    if (key === "chat") gameSlots.chatSlot = slot;
     if (key === "points") gameSlots.pointsSlot = slot;
     if (key === "timer") gameSlots.timerSlot = slot;
     canvas.appendChild(slot);
@@ -1240,7 +1254,9 @@ function renderLayout(config, obsMode) {
     const previewMeta = byId("previewMeta");
     const renderWidth = canvas.clientWidth || 1;
     const scale = renderWidth / FIXED_LAYOUT.canvasWidth;
-    previewMeta.textContent = `Mirror: ${mirrorLabel(config.mirror)}. Preview scale: ${(scale * 100).toFixed(1)}% (fixed ${FIXED_LAYOUT.canvasWidth}x${FIXED_LAYOUT.canvasHeight} layout).`;
+    if (previewMeta) {
+      previewMeta.textContent = `Mirror: ${mirrorLabel(config.mirror)}. Preview scale: ${(scale * 100).toFixed(1)}% (fixed ${FIXED_LAYOUT.canvasWidth}x${FIXED_LAYOUT.canvasHeight} layout).`;
+    }
   }
 }
 
