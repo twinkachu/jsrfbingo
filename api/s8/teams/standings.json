@@ -7,12 +7,12 @@
             "7thAce",
             "Bee"
         ],
-        "abbreviation": "HEX",
-        "matchWins": 0,
-        "matchLosses": 0,
-        "gameWins": 0,
-        "gameLosses": 0,
-        "form": "WWLWL--"
+        "abbreviation": "0xS",
+        "matchWins": 1,
+        "matchLosses": 1,
+        "gameWins": 3,
+        "gameLosses": 2,
+        "form": "WL-----"
         },
         {
         "position": 2,
@@ -22,11 +22,11 @@
             "SyiLenSa"
         ],
         "abbreviation": "NIN",
-        "matchWins": 0,
+        "matchWins": 2,
         "matchLosses": 0,
         "gameWins": 0,
         "gameLosses": 0,
-        "form": "WWLWL--"
+        "form": "WW-----"
         },
         {
         "position": 3,
@@ -106,11 +106,11 @@
             "Fatalr0ck"
         ],
         "abbreviation": "COOK",
-        "matchWins": 0,
+        "matchWins": 5,
         "matchLosses": 0,
         "gameWins": 0,
         "gameLosses": 0,
-        "form": "WWLWL--"
+        "form": "WWWWW--"
         }
     ],
     "playoffs": {
