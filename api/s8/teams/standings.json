@@ -1,20 +1,6 @@
 {
     "standings": [
         {
-        "position": 8,
-        "team": "0xSWARM",
-        "players": [
-            "7thAce",
-            "Bee"
-        ],
-        "abbreviation": "0xS",
-        "matchWins": 0,
-        "matchLosses": 1,
-        "gameWins": 0,
-        "gameLosses": 2,
-        "form": "L------"
-        },
-        {
         "position": 1,
         "team": "Night Ninjas",
         "players": [
@@ -29,13 +15,27 @@
         "form": "W------"
         },
         {
-        "position": 5,
-        "team": "No Bun Intended",
+        "position": 2,
+        "team": "Cook or Be Cooked",
         "players": [
-            "yomsa",
-            "LaurieDBunnykins"
+            "Miku_ds",
+            "Fatalr0ck"
         ],
-        "abbreviation": "BUN",
+        "abbreviation": "COOK",
+        "matchWins": 0,
+        "matchLosses": 0,
+        "gameWins": 0,
+        "gameLosses": 0,
+        "form": "-------"
+        },
+        {
+        "position": 3,
+        "team": "F.C.P.R.E.M.I.X",
+        "players": [
+            "vaen",
+            "dynamight"
+        ],
+        "abbreviation": "FCPR",
         "matchWins": 0,
         "matchLosses": 0,
         "gameWins": 0,
@@ -57,13 +57,13 @@
         "form": "-------"
         },
         {
-        "position": 3,
-        "team": "F.C.P.R.E.M.I.X",
+        "position": 5,
+        "team": "No Bun Intended",
         "players": [
-            "vaen",
-            "dynamight"
+            "yomsa",
+            "LaurieDBunnykins"
         ],
-        "abbreviation": "FCPR",
+        "abbreviation": "BUN",
         "matchWins": 0,
         "matchLosses": 0,
         "gameWins": 0,
@@ -99,18 +99,18 @@
         "form": "-------"
         },
         {
-        "position": 2,
-        "team": "Cook or Be Cooked",
+        "position": 8,
+        "team": "0xSWARM",
         "players": [
-            "Miku_ds",
-            "Fatalr0ck"
+            "7thAce",
+            "Bee"
         ],
-        "abbreviation": "COOK",
+        "abbreviation": "0xS",
         "matchWins": 0,
-        "matchLosses": 0,
+        "matchLosses": 1,
         "gameWins": 0,
-        "gameLosses": 0,
-        "form": "-------"
+        "gameLosses": 2,
+        "form": "L------"
         }
     ],
     "playoffs": {
@@ -150,13 +150,13 @@
                 "score2": 0
             },
             {
-                "team1": "Team Name Pending",
+                "team1": "F.C.P.R.E.M.I.X",
                 "team2": "Nyarsonists",
                 "score1": 0,
                 "score2": 0
             },
             {
-                "team1": "F.C.P.R.E.M.I.X",
+                "team1": "Peam Tame Nending",
                 "team2": "Cook or Be Cooked",
                 "score1": 0,
                 "score2": 0
@@ -165,24 +165,24 @@
         "round2": [
             {
                 "team1": "0xSWARM",
-                "team2": "Night Ninjas",
+                "team2": "No Bun Intended",
                 "score1": 0,
                 "score2": 0
             },
             {
-                "team1": "No Bun Intended",
+                "team1": "Night Ninjas",
                 "team2": "Generation zzz",
                 "score1": 0,
                 "score2": 0
             },
             {
-                "team1": "Team Name Pending",
-                "team2": "Nyarsonists",
+                "team1": "F.C.P.R.E.M.I.X",
+                "team2": "Peam Tame Nending",
                 "score1": 0,
                 "score2": 0
             },
             {
-                "team1": "F.C.P.R.E.M.I.X",
+                "team1": "Nyarsonists",
                 "team2": "Cook or Be Cooked",
                 "score1": 0,
                 "score2": 0
@@ -191,19 +191,13 @@
         "round3": [
             {
                 "team1": "0xSWARM",
-                "team2": "Night Ninjas",
-                "score1": 0,
-                "score2": 0
-            },
-            {
-                "team1": "No Bun Intended",
                 "team2": "Generation zzz",
                 "score1": 0,
                 "score2": 0
             },
             {
-                "team1": "Team Name Pending",
-                "team2": "Nyarsonists",
+                "team1": "Night Ninjas",
+                "team2": "No Bun Intended",
                 "score1": 0,
                 "score2": 0
             },
@@ -212,29 +206,35 @@
                 "team2": "Cook or Be Cooked",
                 "score1": 0,
                 "score2": 0
+            },
+            {
+                "team1": "Nyarsonists",
+                "team2": "Team Name Pending",
+                "score1": 0,
+                "score2": 0
             }
         ],
         "round4": [
             {
                 "team1": "0xSWARM",
-                "team2": "Night Ninjas",
+                "team2": "F.C.P.R.E.M.I.X",
                 "score1": 0,
                 "score2": 0
             },
             {
-                "team1": "No Bun Intended",
-                "team2": "Generation zzz",
-                "score1": 0,
-                "score2": 0
-            },
-            {
-                "team1": "Team Name Pending",
+                "team1": "Night Ninjas",
                 "team2": "Nyarsonists",
                 "score1": 0,
                 "score2": 0
             },
             {
-                "team1": "F.C.P.R.E.M.I.X",
+                "team1": "No Bun Intended",
+                "team2": "Team Name Pending",
+                "score1": 0,
+                "score2": 0
+            },
+            {
+                "team1": "Generation zzz",
                 "team2": "Cook or Be Cooked",
                 "score1": 0,
                 "score2": 0
@@ -243,25 +243,25 @@
         "round5": [
             {
                 "team1": "0xSWARM",
-                "team2": "Night Ninjas",
-                "score1": 0,
-                "score2": 0
-            },
-            {
-                "team1": "No Bun Intended",
-                "team2": "Generation zzz",
-                "score1": 0,
-                "score2": 0
-            },
-            {
-                "team1": "Team Name Pending",
                 "team2": "Nyarsonists",
                 "score1": 0,
                 "score2": 0
             },
             {
-                "team1": "F.C.P.R.E.M.I.X",
+                "team1": "Night Ninjas",
+                "team2": "F.C.P.R.E.M.I.X",
+                "score1": 0,
+                "score2": 0
+            },
+            {
+                "team1": "No Bun Intended",
                 "team2": "Cook or Be Cooked",
+                "score1": 0,
+                "score2": 0
+            },
+            {
+                "team1": "Generation zzz",
+                "team2": "Team Name Pending",
                 "score1": 0,
                 "score2": 0
             }
@@ -269,25 +269,25 @@
         "round6":[
             {
                 "team1": "0xSWARM",
-                "team2": "Night Ninjas",
+                "team2": "Team Name Pending",
+                "score1": 0,
+                "score2": 0
+            },
+            {
+                "team1": "Night Ninjas",
+                "team2": "Cook or Be Cooked",
                 "score1": 0,
                 "score2": 0
             },
             {
                 "team1": "No Bun Intended",
-                "team2": "Generation zzz",
-                "score1": 0,
-                "score2": 0
-            },
-            {
-                "team1": "Team Name Pending",
                 "team2": "Nyarsonists",
                 "score1": 0,
                 "score2": 0
             },
             {
-                "team1": "F.C.P.R.E.M.I.X",
-                "team2": "Cook or Be Cooked",
+                "team1": "Generation zzz",
+                "team2": "F.C.P.R.E.M.I.X",
                 "score1": 0,
                 "score2": 0
             }
@@ -295,25 +295,25 @@
         "round7":[
             {
                 "team1": "0xSWARM",
-                "team2": "Night Ninjas",
+                "team2": "Cook or Be Cooked",
+                "score1": 0,
+                "score2": 0
+            },
+            {
+                "team1": "Night Ninjas",
+                "team2": "Team Name Pending",
                 "score1": 0,
                 "score2": 0
             },
             {
                 "team1": "No Bun Intended",
-                "team2": "Generation zzz",
+                "team2": "F.C.P.R.E.M.I.X",
                 "score1": 0,
                 "score2": 0
             },
             {
-                "team1": "Team Name Pending",
+                "team1": "Generation zzz",
                 "team2": "Nyarsonists",
-                "score1": 0,
-                "score2": 0
-            },
-            {
-                "team1": "F.C.P.R.E.M.I.X",
-                "team2": "Cook or Be Cooked",
                 "score1": 0,
                 "score2": 0
             }
