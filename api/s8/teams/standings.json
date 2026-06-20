@@ -1,7 +1,7 @@
 {
     "standings": [
         {
-        "position": 1,
+        "position": 8,
         "team": "0xSWARM",
         "players": [
             "7thAce",
@@ -9,27 +9,27 @@
         ],
         "abbreviation": "0xS",
         "matchWins": 0,
-        "matchLosses": 0,
+        "matchLosses": 1,
         "gameWins": 0,
-        "gameLosses": 0,
-        "form": "-------"
+        "gameLosses": 2,
+        "form": "L------"
         },
         {
-        "position": 5,
+        "position": 1,
         "team": "Night Ninjas",
         "players": [
             "jon",
             "SyiLenSa"
         ],
         "abbreviation": "NIN",
-        "matchWins": 0,
+        "matchWins": 1,
         "matchLosses": 0,
-        "gameWins": 0,
+        "gameWins": 2,
         "gameLosses": 0,
-        "form": "-------"
+        "form": "W------"
         },
         {
-        "position": 6,
+        "position": 5,
         "team": "No Bun Intended",
         "players": [
             "yomsa",
@@ -71,7 +71,7 @@
         "form": "-------"
         },
         {
-        "position": 7,
+        "position": 6,
         "team": "Nyarsonists",
         "players": [
             "Nae",
@@ -85,7 +85,7 @@
         "form": "-------"
         },
         {
-        "position": 8,
+        "position": 7,
         "team": "Peam Tame Nending",
         "players": [
             "nago",
