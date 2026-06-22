@@ -14,8 +14,22 @@
         "gameLosses": 0,
         "form": "W------"
         },
-        {
+         {
         "position": 2,
+        "team": "No Bun Intended",
+        "players": [
+            "yomsa",
+            "LaurieDBunnykins"
+        ],
+        "abbreviation": "BUN",
+        "matchWins": 1,
+        "matchLosses": 0,
+        "gameWins": 2,
+        "gameLosses": 0,
+        "form": "-W-----"
+        },
+        {
+        "position": 3,
         "team": "Cook or Be Cooked",
         "players": [
             "Miku_ds",
@@ -29,7 +43,7 @@
         "form": "-------"
         },
         {
-        "position": 3,
+        "position": 4,
         "team": "F.C.P.R.E.M.I.X",
         "players": [
             "vaen",
@@ -43,27 +57,13 @@
         "form": "-------"
         },
         {
-        "position": 4,
+        "position": 5,
         "team": "Generation zzz",
         "players": [
             "claws",
             "Kevin"
         ],
         "abbreviation": "ZZZ",
-        "matchWins": 0,
-        "matchLosses": 0,
-        "gameWins": 0,
-        "gameLosses": 0,
-        "form": "-------"
-        },
-        {
-        "position": 5,
-        "team": "No Bun Intended",
-        "players": [
-            "yomsa",
-            "LaurieDBunnykins"
-        ],
-        "abbreviation": "BUN",
         "matchWins": 0,
         "matchLosses": 0,
         "gameWins": 0,
@@ -107,10 +107,10 @@
         ],
         "abbreviation": "0xS",
         "matchWins": 0,
-        "matchLosses": 1,
+        "matchLosses": 2,
         "gameWins": 0,
-        "gameLosses": 2,
-        "form": "L------"
+        "gameLosses": 4,
+        "form": "LL-----"
         }
     ],
     "playoffs": {
