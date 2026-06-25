@@ -13,11 +13,16 @@ const CHAT_SERVERS = {
 };
 
 let activeFeedSocket = null;
+let activeFeedReconnectTimer = null;
+let activeFeedStableTimer = null;
+let activeFeedGeneration = 0;
 let activeTimerFrame = null;
 let seenSnipeSignatures = new Set();
 let chatPlayerColors = new Map();
 let canvasReferenceScaleObserver = null;
 const CHAT_MAX_MESSAGES = 80;
+const FEED_RECONNECT_DELAYS_MS = [1000, 2000, 5000, 10000, 15000];
+const FEED_STABLE_RESET_MS = 30000;
 const MAX_SEEN_SNIPE_SIGNATURES = 10;
 const UNCLAIMED_SQUARE_COLOR = "#101010";
 const BINGO_LINE_BONUS = 2;
@@ -251,18 +256,27 @@ function chatServerForMirror(mirrorHost) {
 }
 
 function closeActiveFeedSocket() {
+  activeFeedGeneration += 1;
+
+  if (activeFeedReconnectTimer !== null) {
+    window.clearTimeout(activeFeedReconnectTimer);
+    activeFeedReconnectTimer = null;
+  }
+
+  if (activeFeedStableTimer !== null) {
+    window.clearTimeout(activeFeedStableTimer);
+    activeFeedStableTimer = null;
+  }
+
   if (activeTimerFrame !== null) {
     cancelAnimationFrame(activeTimerFrame);
     activeTimerFrame = null;
   }
 
-  if (!activeFeedSocket) return;
-  activeFeedSocket.onopen = null;
-  activeFeedSocket.onmessage = null;
-  activeFeedSocket.onerror = null;
-  activeFeedSocket.onclose = null;
-  activeFeedSocket.close();
+  const socket = activeFeedSocket;
   activeFeedSocket = null;
+  if (!socket) return;
+  socket.close();
 }
 
 function parseChatMessage(data) {
@@ -913,18 +927,24 @@ function connectGameFeed({ chatSlot, pointsSlot, timerSlot }, mirrorHost) {
     gameRunning: false,
     startClientMs: null,
     minimumElapsedMs: 0,
-    elapsedMs: 0
+    elapsedMs: 0,
+    feedStatus: ""
   };
 
   const updateScoreboard = (status = "") => {
     renderScoreboard(pointsSlot, calculateScoreboard(state.board, state.users), status);
   };
 
-  const updateTimer = (status = "") => {
+  const updateTimer = (status = state.feedStatus) => {
     if (state.gameRunning && state.startClientMs !== null) {
       state.elapsedMs = performance.now() - state.startClientMs;
     }
     renderTimer(timerSlot, state.elapsedMs, state.gameRunning, status);
+  };
+
+  const setFeedStatus = (status = "") => {
+    state.feedStatus = status;
+    updateTimer();
   };
 
   const tick = () => {
@@ -932,107 +952,169 @@ function connectGameFeed({ chatSlot, pointsSlot, timerSlot }, mirrorHost) {
     activeTimerFrame = requestAnimationFrame(tick);
   };
 
+  const feedGeneration = activeFeedGeneration;
+  let reconnectAttempt = 0;
+  let showedConnectionError = false;
+  const isCurrentFeed = () => activeFeedGeneration === feedGeneration;
+
+  const scheduleReconnect = () => {
+    if (!isCurrentFeed()) return;
+    if (activeFeedReconnectTimer !== null) {
+      window.clearTimeout(activeFeedReconnectTimer);
+    }
+    if (activeFeedStableTimer !== null) {
+      window.clearTimeout(activeFeedStableTimer);
+      activeFeedStableTimer = null;
+    }
+
+    const delay = FEED_RECONNECT_DELAYS_MS[Math.min(reconnectAttempt, FEED_RECONNECT_DELAYS_MS.length - 1)];
+    reconnectAttempt += 1;
+    updateScoreboard(`Reconnecting in ${Math.ceil(delay / 1000)}s`);
+    setFeedStatus("RECONNECTING");
+    activeFeedReconnectTimer = window.setTimeout(() => {
+      activeFeedReconnectTimer = null;
+      connectSocket();
+    }, delay);
+  };
+
+  const resetReconnectBackoffAfterStableConnection = (socket) => {
+    if (activeFeedStableTimer !== null) {
+      window.clearTimeout(activeFeedStableTimer);
+    }
+    activeFeedStableTimer = window.setTimeout(() => {
+      activeFeedStableTimer = null;
+      if (activeFeedSocket === socket && isCurrentFeed()) {
+        reconnectAttempt = 0;
+      }
+    }, FEED_STABLE_RESET_MS);
+  };
+
+  const connectSocket = () => {
+    if (!isCurrentFeed()) return;
+
+    try {
+      const socket = new WebSocket(server);
+      activeFeedSocket = socket;
+
+      socket.addEventListener("open", () => {
+        if (activeFeedSocket !== socket || !isCurrentFeed()) return;
+        if (showedConnectionError && chatLog) {
+          appendChatMessage(chatLog, { content: "Feed reconnected.", color: "#7CFF9B" });
+        }
+        showedConnectionError = false;
+        updateScoreboard();
+        setFeedStatus();
+        resetReconnectBackoffAfterStableConnection(socket);
+        socket.send(JSON.stringify({ username: "CUSTOM_OVERLAY_READER" }));
+        socket.send(JSON.stringify({ type: "info", data: { type: "Start Time" } }));
+        socket.send(JSON.stringify({ type: "info", data: { type: "Game Active" } }));
+      });
+
+      socket.addEventListener("message", (event) => {
+        if (activeFeedSocket !== socket || !isCurrentFeed()) return;
+
+        let message;
+        try {
+          message = JSON.parse(event.data);
+        } catch {
+          return;
+        }
+
+        if (message.type === "message") {
+          const seconds = gameTimeSecondsFromMessage(message.data);
+          if (seconds !== null && applyMinimumElapsed(state, seconds * 1000)) {
+            updateTimer();
+          }
+        }
+
+        if (chatSlot && ["history", "message", "snipe", "notification"].includes(message.type)) {
+          handleChatPayload(chatSlot, chatLog, event.data);
+          return;
+        }
+
+        if (message.type === "board" || message.type === "new_board") {
+          state.board = Array.isArray(message.data) ? message.data : [];
+          updateScoreboard();
+          if (message.type === "new_board") {
+            state.gameRunning = false;
+            state.startClientMs = null;
+            state.minimumElapsedMs = 0;
+            state.elapsedMs = 0;
+            updateTimer();
+          }
+          return;
+        }
+
+        if (message.type === "user_list") {
+          state.users = Array.isArray(message.data) ? message.data : [];
+          updateScoreboard();
+          return;
+        }
+
+        if (message.type === "game_start" && message.data?.result !== "false") {
+          state.minimumElapsedMs = 0;
+          if (applyStartTimestamp(state, message.data?.timestamp)) {
+            state.gameRunning = true;
+            updateTimer();
+          }
+          return;
+        }
+
+        if (message.type === "result") {
+          updateTimer();
+          state.gameRunning = false;
+          updateTimer();
+          return;
+        }
+
+        if (message.type === "info") {
+          const info = parseMaybeJson(message.data);
+          const infoType = String(info?.type ?? info?.name ?? "").toLowerCase();
+          const value = readInfoValue(info);
+          if (infoType === "start time") {
+            applyStartTimestamp(state, value);
+            updateTimer();
+          } else if (infoType === "game active") {
+            state.gameRunning = isTruthyInfoValue(value);
+            updateTimer();
+          }
+        }
+      });
+
+      socket.addEventListener("error", () => {
+        if (activeFeedSocket !== socket || !isCurrentFeed()) return;
+        updateScoreboard("Connection error");
+        setFeedStatus("ERROR");
+        if (!showedConnectionError && chatLog) {
+          appendChatMessage(chatLog, { content: "Feed connection lost. Reconnecting...", color: "#ff6b6b" });
+        }
+        showedConnectionError = true;
+        activeFeedSocket = null;
+        socket.close();
+        scheduleReconnect();
+      });
+
+      socket.addEventListener("close", () => {
+        if (activeFeedSocket !== socket || !isCurrentFeed()) return;
+        activeFeedSocket = null;
+        scheduleReconnect();
+      });
+    } catch {
+      if (!isCurrentFeed()) return;
+      activeFeedSocket = null;
+      updateScoreboard("Unable to connect");
+      setFeedStatus("ERROR");
+      if (!showedConnectionError && chatLog) {
+        appendChatMessage(chatLog, { content: "Unable to connect to feed. Reconnecting...", color: "#ff6b6b" });
+      }
+      showedConnectionError = true;
+      scheduleReconnect();
+    }
+  };
+
   updateScoreboard();
   updateTimer();
-
-  try {
-    const socket = new WebSocket(server);
-    activeFeedSocket = socket;
-
-    socket.addEventListener("open", () => {
-      socket.send(JSON.stringify({ username: "CUSTOM_OVERLAY_READER" }));
-      socket.send(JSON.stringify({ type: "info", data: { type: "Start Time" } }));
-      socket.send(JSON.stringify({ type: "info", data: { type: "Game Active" } }));
-    });
-
-    socket.addEventListener("message", (event) => {
-      if (activeFeedSocket !== socket) return;
-
-      let message;
-      try {
-        message = JSON.parse(event.data);
-      } catch {
-        return;
-      }
-
-      if (message.type === "message") {
-        const seconds = gameTimeSecondsFromMessage(message.data);
-        if (seconds !== null && applyMinimumElapsed(state, seconds * 1000)) {
-          updateTimer();
-        }
-      }
-
-      if (chatSlot && ["history", "message", "snipe", "notification"].includes(message.type)) {
-        handleChatPayload(chatSlot, chatLog, event.data);
-        return;
-      }
-
-      if (message.type === "board" || message.type === "new_board") {
-        state.board = Array.isArray(message.data) ? message.data : [];
-        updateScoreboard();
-        if (message.type === "new_board") {
-          state.gameRunning = false;
-          state.startClientMs = null;
-          state.minimumElapsedMs = 0;
-          state.elapsedMs = 0;
-          updateTimer();
-        }
-        return;
-      }
-
-      if (message.type === "user_list") {
-        state.users = Array.isArray(message.data) ? message.data : [];
-        updateScoreboard();
-        return;
-      }
-
-      if (message.type === "game_start" && message.data?.result !== "false") {
-        state.minimumElapsedMs = 0;
-        if (applyStartTimestamp(state, message.data?.timestamp)) {
-          state.gameRunning = true;
-          updateTimer();
-        }
-        return;
-      }
-
-      if (message.type === "result") {
-        updateTimer();
-        state.gameRunning = false;
-        updateTimer();
-        return;
-      }
-
-      if (message.type === "info") {
-        const info = parseMaybeJson(message.data);
-        const infoType = String(info?.type ?? info?.name ?? "").toLowerCase();
-        const value = readInfoValue(info);
-        if (infoType === "start time") {
-          applyStartTimestamp(state, value);
-          updateTimer();
-        } else if (infoType === "game active") {
-          state.gameRunning = isTruthyInfoValue(value);
-          updateTimer();
-        }
-      }
-    });
-
-    socket.addEventListener("error", () => {
-      updateScoreboard("Connection error");
-      updateTimer("ERROR");
-      if (chatLog) appendChatMessage(chatLog, { content: "Chat connection error.", color: "#ff6b6b" });
-    });
-
-    socket.addEventListener("close", () => {
-      if (activeFeedSocket === socket) {
-        activeFeedSocket = null;
-        updateTimer(state.gameRunning ? "OFFLINE" : "");
-      }
-    });
-  } catch {
-    updateScoreboard("Unable to connect");
-    updateTimer("ERROR");
-    if (chatLog) appendChatMessage(chatLog, { content: "Unable to connect to chat.", color: "#ff6b6b" });
-  }
+  connectSocket();
 
   if (timerSlot) {
     activeTimerFrame = requestAnimationFrame(tick);
