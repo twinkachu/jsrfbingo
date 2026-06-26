@@ -19,8 +19,11 @@ let activeFeedGeneration = 0;
 let activeTimerFrame = null;
 let seenSnipeSignatures = new Set();
 let chatPlayerColors = new Map();
+let chatEmoteMap = new Map();
+let chatEmoteLoadPromise = null;
 let canvasReferenceScaleObserver = null;
 const CHAT_MAX_MESSAGES = 80;
+const CHAT_7TV_CHANNEL_ID = "58301305";
 const FEED_RECONNECT_DELAYS_MS = [1000, 2000, 5000, 10000, 15000];
 const FEED_STABLE_RESET_MS = 30000;
 const MAX_SEEN_SNIPE_SIGNATURES = 10;
@@ -290,11 +293,10 @@ function parseChatMessage(data) {
 
   const author = data.author || data.user || data.username || data.name || data.player || "";
   const message = data.message || data.msg || data.text || data.content || data.body || "";
-  const time = data.time || data.timestamp || "";
   const gameTime = data.in_game_time;
   const color = data.color || "";
 
-  if (message) return { author, message, time, gameTime, color };
+  if (message) return { author, message, gameTime, color };
   return { message: JSON.stringify(data) };
 }
 
@@ -316,13 +318,6 @@ function chatColorForPlayer(name) {
   return chatPlayerColors.get(normalizePlayerColorName(name)) || "";
 }
 
-function formatClock(value) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-}
-
 function formatGameTime(value) {
   if (value === null || value === undefined) return "";
   const total = Number(value);
@@ -339,33 +334,212 @@ function gameTimeSecondsFromMessage(message) {
   return Number.isFinite(seconds) && seconds >= 0 ? seconds : null;
 }
 
+function applyMessageColor(element, color) {
+  if (isValidChatColor(color)) {
+    element.style.color = String(color).trim();
+  }
+}
+
+async function loadChatEmotes() {
+  if (chatEmoteMap.size) return;
+  if (chatEmoteLoadPromise) return chatEmoteLoadPromise;
+
+  chatEmoteLoadPromise = fetchChatEmotes();
+  return chatEmoteLoadPromise;
+}
+
+async function fetchChatEmotes() {
+  if (chatEmoteMap.size) return;
+
+  try {
+    const response = await fetch(`https://7tv.io/v3/users/twitch/${CHAT_7TV_CHANNEL_ID}`);
+    if (!response.ok) return;
+    const data = await response.json();
+    const emotes = data?.emote_set?.emotes;
+    if (!Array.isArray(emotes)) return;
+
+    const nextEmoteMap = new Map();
+    emotes.forEach((emote) => {
+      if (!emote?.name || !emote?.id) return;
+      if (emote.name.length > 3 || emote.name.toUpperCase() === emote.name) {
+        nextEmoteMap.set(emote.name, `https://cdn.7tv.app/emote/${emote.id}/3x.webp`);
+      }
+    });
+    chatEmoteMap = nextEmoteMap;
+  } catch (error) {
+    console.warn("Failed to fetch 7TV emotes:", error);
+  } finally {
+    chatEmoteLoadPromise = null;
+  }
+}
+
+function createChatEmote(name, src) {
+  const image = document.createElement("img");
+  image.className = "chat-emote";
+  image.src = src;
+  image.alt = name;
+  image.title = name;
+  image.loading = "lazy";
+  image.decoding = "async";
+  return image;
+}
+
+function appendTextWithEmotes(container, value) {
+  String(value ?? "").split(/(\s+)/).forEach((part) => {
+    if (!part) return;
+    const emoteSrc = chatEmoteMap.get(part);
+    container.appendChild(emoteSrc ? createChatEmote(part, emoteSrc) : document.createTextNode(part));
+  });
+}
+
+function districtAreas() {
+  const shibuyaCho = ["Shibuya", "Chuo", "Hikage", "Dogen"];
+  const benten = ["99th", "SDPP", "HWY0", "Sky Dino", "Stadium"];
+  const kogane = ["Sewers", "Kibo", "FRZ", "Btm pt.", "RDH"];
+
+  return { shibuyaCho, benten, kogane, all: [...shibuyaCho, ...benten, ...kogane] };
+}
+
+function districtClass(area) {
+  const { shibuyaCho, benten, kogane } = districtAreas();
+
+  if (shibuyaCho.includes(area)) return "district-green";
+  if (benten.includes(area)) return "district-blue";
+  if (kogane.includes(area)) return "district-red";
+  return "";
+}
+
+function parseBoardEventMessage(message) {
+  const content = String(message?.message ?? "").trim();
+  const automark = content.startsWith("[AUTOMARK]");
+  const body = content.replace(/^\[AUTOMARK\]\s*/, "");
+  const match = body.match(/^(.+?)\s+(marked|unmarked)\s+(.+)$/);
+
+  if (!match) return null;
+  if (message.author && match[1] !== message.author) return null;
+
+  return {
+    automark,
+    player: match[1],
+    action: match[2],
+    objective: match[3]
+  };
+}
+
+function formatObjective(objective) {
+  const withoutSoulNumber = String(objective ?? "").replace(/^(.+?)\s+\d{3}\s+-\s+/, "$1 - ");
+  const area = districtAreas().all.find((name) => withoutSoulNumber.startsWith(name));
+
+  if (!area) {
+    return { area: null, detail: withoutSoulNumber };
+  }
+
+  const detail = withoutSoulNumber.slice(area.length).replace(/^\s*-\s*/, "").trim();
+  return { area, detail };
+}
+
+function appendEventObjective(container, objective) {
+  const { area, detail } = formatObjective(objective);
+
+  if (area) {
+    const district = document.createElement("span");
+    district.className = `event-objective-district ${districtClass(area)}`.trim();
+    appendTextWithEmotes(district, area);
+    container.appendChild(district);
+  }
+
+  const detailNode = document.createElement("span");
+  detailNode.className = "event-objective-detail";
+  appendTextWithEmotes(detailNode, area && detail ? `: ${detail}` : detail);
+  container.appendChild(detailNode);
+}
+
+function createChatEventMessage(parsed, event, shouldAnimate) {
+  const message = document.createElement("div");
+  message.className = "message chat-event";
+  message.style.setProperty("--event-accent", isValidChatColor(parsed.color) ? parsed.color : "#7db7e8");
+  if (!shouldAnimate) message.classList.add("message-static");
+
+  const meta = document.createElement("div");
+  meta.className = "event-meta";
+
+  const label = document.createElement("span");
+  label.textContent = event.automark ? "AUTOMARK" : "BOARD";
+  meta.appendChild(label);
+
+  const body = document.createElement("div");
+  body.className = "event-body";
+
+  const player = document.createElement("span");
+  player.className = "event-player";
+  applyMessageColor(player, parsed.color);
+  player.textContent = event.player;
+  body.appendChild(player);
+
+  const action = document.createElement("span");
+  action.className = "event-action";
+  action.textContent = event.action;
+  body.appendChild(action);
+
+  appendEventObjective(body, event.objective);
+
+  if (parsed.gameTime !== null && parsed.gameTime !== undefined) {
+    const timePrefix = document.createElement("span");
+    timePrefix.className = "event-time-prefix";
+    timePrefix.textContent = " at ";
+    body.appendChild(timePrefix);
+
+    const gameTime = document.createElement("span");
+    gameTime.className = "event-game-time";
+    gameTime.textContent = formatGameTime(parsed.gameTime);
+    body.appendChild(gameTime);
+  }
+
+  message.append(meta, body);
+  return message;
+}
+
 function createChatMessage(data, shouldAnimate = true) {
   const parsed = parseChatMessage(data);
   registerChatPlayerColor(parsed.author, parsed.color);
+  const event = parseBoardEventMessage(parsed);
+
+  if (event) {
+    const eventMessage = createChatEventMessage(parsed, event, shouldAnimate);
+    eventMessage.__chatMessageSource = { data, shouldAnimate };
+    return eventMessage;
+  }
 
   const message = document.createElement("div");
   message.className = "message";
   if (!shouldAnimate) message.classList.add("message-static");
 
+  const meta = document.createElement("div");
+  meta.className = "message-meta";
+
   if (parsed.gameTime !== null && parsed.gameTime !== undefined) {
     const gameTime = document.createElement("span");
     gameTime.className = "message-game-time";
-    gameTime.textContent = `(${formatGameTime(parsed.gameTime)}) `;
-    message.appendChild(gameTime);
+    gameTime.textContent = formatGameTime(parsed.gameTime);
+    meta.appendChild(gameTime);
   }
 
+  const text = document.createElement("div");
+  text.className = "message-text";
   if (parsed.author) {
     const author = document.createElement("span");
-    author.className = "message-author";
-    if (parsed.color) author.style.color = parsed.color;
+    author.className = "message-sender";
+    applyMessageColor(author, parsed.color);
     author.textContent = `${parsed.author}: `;
-    message.appendChild(author);
+    text.appendChild(author);
   }
+  appendTextWithEmotes(text, parsed.message);
 
-  const body = document.createElement("span");
-  body.className = "message-body";
-  body.textContent = parsed.message;
-  message.appendChild(body);
+  if (meta.childNodes.length) {
+    message.appendChild(meta);
+  }
+  message.appendChild(text);
+  message.__chatMessageSource = { data, shouldAnimate };
 
   return message;
 }
@@ -551,6 +725,13 @@ function createChat(slot) {
 
   panel.append(log);
   slot.append(panel);
+  loadChatEmotes().then(() => {
+    [...log.querySelectorAll(".message")].forEach((message) => {
+      const source = message.__chatMessageSource;
+      if (!source) return;
+      message.replaceWith(createChatMessage(source.data, false));
+    });
+  });
   return log;
 }
 
