@@ -8,11 +8,11 @@
             "SyiLenSa"
         ],
         "abbreviation": "NIN",
-        "matchWins": 1,
+        "matchWins": 2,
         "matchLosses": 0,
-        "gameWins": 2,
+        "gameWins": 4,
         "gameLosses": 0,
-        "form": "W------"
+        "form": "WW-----"
         },
          {
         "position": 2,
@@ -44,20 +44,6 @@
         },
         {
         "position": 4,
-        "team": "Generation zzz",
-        "players": [
-            "claws",
-            "Kevin"
-        ],
-        "abbreviation": "ZZZ",
-        "matchWins": 0,
-        "matchLosses": 0,
-        "gameWins": 0,
-        "gameLosses": 0,
-        "form": "-------"
-        },
-        {
-        "position": 5,
         "team": "Nyarsonists",
         "players": [
             "Nae",
@@ -71,7 +57,7 @@
         "form": "-------"
         },
         {
-        "position": 6,
+        "position": 5,
         "team": "Peam Tame Nending",
         "players": [
             "nago",
@@ -83,6 +69,20 @@
         "gameWins": 0,
         "gameLosses": 0,
         "form": "-------"
+        },
+        {
+        "position": 6,
+        "team": "Generation zzz",
+        "players": [
+            "claws",
+            "Kevin"
+        ],
+        "abbreviation": "ZZZ",
+        "matchWins": 0,
+        "matchLosses": 1,
+        "gameWins": 0,
+        "gameLosses": 2,
+        "form": "-L-----"
         },
         {
         "position": 7,
