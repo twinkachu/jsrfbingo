@@ -1,7 +1,23 @@
 {
     "standings": [
-          {
+        {
         "position": 1,
+        "team": "Cook or Be Cooked",
+        "players": [
+            "Miku_ds",
+            "Fatalr0ck"
+        ],
+        "abbreviation": "COOK",
+        "color": "#ee872b",
+        "matchWins": 2,
+        "matchLosses": 0,
+        "gameWins": 4,
+        "gameLosses": 0,
+        "form": "-WW----"
+        },
+        
+          {
+        "position": 2,
         "team": "No Bun Intended",
         "players": [
             "yomsa",
@@ -17,7 +33,7 @@
         },
         
         {
-        "position": 2,
+        "position": 3,
         "team": "Night Ninjas",
         "players": [
             "jon",
@@ -31,39 +47,9 @@
         "gameLosses": 2,
         "form": "WWL----"
         },
-       
-        {
-        "position": 3,
-        "team": "Cook or Be Cooked",
-        "players": [
-            "Miku_ds",
-            "Fatalr0ck"
-        ],
-        "abbreviation": "COOK",
-        "color": "#ee872b",
-        "matchWins": 1,
-        "matchLosses": 0,
-        "gameWins": 2,
-        "gameLosses": 0,
-        "form": "--W----"
-        },
+        
         {
         "position": 4,
-        "team": "Nyarsonists",
-        "players": [
-            "Nae",
-            "korenaz"
-        ],
-        "abbreviation": "NYA",
-        "color": "#1c890c",
-        "matchWins": 0,
-        "matchLosses": 0,
-        "gameWins": 0,
-        "gameLosses": 0,
-        "form": "-------"
-        },
-        {
-        "position": 5,
         "team": "Peam Tame Nending",
         "players": [
             "nago",
@@ -78,7 +64,7 @@
         "form": "-------"
         },
         {
-        "position": 6,
+        "position": 5,
         "team": "Generation zzz",
         "players": [
             "claws",
@@ -93,7 +79,7 @@
         "form": "-L-----"
         },
         {
-        "position": 7,
+        "position": 6,
         "team": "F.C.P.R.E.M.I.X",
         "players": [
             "vaen",
@@ -107,6 +93,23 @@
         "gameLosses": 2,
         "form": "--L----"
         },
+        
+        {
+        "position": 7,
+        "team": "Nyarsonists",
+        "players": [
+            "Nae",
+            "korenaz"
+        ],
+        "abbreviation": "NYA",
+        "color": "#1c890c",
+        "matchWins": 0,
+        "matchLosses": 1,
+        "gameWins": 0,
+        "gameLosses": 2,
+        "form": "-L-----"
+        },
+        
         {
         "position": 8,
         "team": "0xSWARM",
