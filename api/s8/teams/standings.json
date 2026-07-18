@@ -8,6 +8,7 @@
             "SyiLenSa"
         ],
         "abbreviation": "NIN",
+        "color": "#b831e3",
         "matchWins": 2,
         "matchLosses": 0,
         "gameWins": 4,
@@ -22,6 +23,7 @@
             "LaurieDBunnykins"
         ],
         "abbreviation": "BUN",
+        "color": "#fda3cb",
         "matchWins": 1,
         "matchLosses": 0,
         "gameWins": 2,
@@ -36,6 +38,7 @@
             "Fatalr0ck"
         ],
         "abbreviation": "COOK",
+        "color": "#ee872b",
         "matchWins": 1,
         "matchLosses": 0,
         "gameWins": 2,
@@ -50,6 +53,7 @@
             "korenaz"
         ],
         "abbreviation": "NYA",
+        "color": "#1c890c",
         "matchWins": 0,
         "matchLosses": 0,
         "gameWins": 0,
@@ -64,6 +68,7 @@
             "Flashy"
         ],
         "abbreviation": "PEAM",
+        "color": "#c42615",
         "matchWins": 0,
         "matchLosses": 0,
         "gameWins": 0,
@@ -78,6 +83,7 @@
             "Kevin"
         ],
         "abbreviation": "ZZZ",
+        "color": "#032595",
         "matchWins": 0,
         "matchLosses": 1,
         "gameWins": 0,
@@ -92,6 +98,7 @@
             "dynamight"
         ],
         "abbreviation": "FCPR",
+        "color": "#8fafff",
         "matchWins": 0,
         "matchLosses": 1,
         "gameWins": 0,
@@ -106,6 +113,7 @@
             "Bee"
         ],
         "abbreviation": "0xS",
+        "color": "#efe925",
         "matchWins": 0,
         "matchLosses": 2,
         "gameWins": 0,
