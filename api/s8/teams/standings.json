@@ -1,22 +1,7 @@
 {
     "standings": [
-        {
+          {
         "position": 1,
-        "team": "Night Ninjas",
-        "players": [
-            "jon",
-            "SyiLenSa"
-        ],
-        "abbreviation": "NIN",
-        "color": "#b831e3",
-        "matchWins": 2,
-        "matchLosses": 1,
-        "gameWins": 4,
-        "gameLosses": 2,
-        "form": "WW-----"
-        },
-         {
-        "position": 2,
         "team": "No Bun Intended",
         "players": [
             "yomsa",
@@ -30,6 +15,23 @@
         "gameLosses": 0,
         "form": "-W-----"
         },
+        
+        {
+        "position": 2,
+        "team": "Night Ninjas",
+        "players": [
+            "jon",
+            "SyiLenSa"
+        ],
+        "abbreviation": "NIN",
+        "color": "#b831e3",
+        "matchWins": 2,
+        "matchLosses": 1,
+        "gameWins": 4,
+        "gameLosses": 2,
+        "form": "WW-----"
+        },
+       
         {
         "position": 3,
         "team": "Cook or Be Cooked",
