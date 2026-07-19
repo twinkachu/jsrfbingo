@@ -31,9 +31,25 @@
         "gameLosses": 0,
         "form": "-WW----"
         },
+
+         {
+        "position": 3,
+        "team": "Peam Tame Nending",
+        "players": [
+            "nago",
+            "Flashy"
+        ],
+        "abbreviation": "PEAM",
+        "color": "#c42615",
+        "matchWins": 1,
+        "matchLosses": 0,
+        "gameWins": 2,
+        "gameLosses": 1,
+        "form": "-W-----"
+        },
         
         {
-        "position": 3,
+        "position": 4,
         "team": "Night Ninjas",
         "players": [
             "jon",
@@ -48,21 +64,7 @@
         "form": "WWL----"
         },
         
-        {
-        "position": 4,
-        "team": "Peam Tame Nending",
-        "players": [
-            "nago",
-            "Flashy"
-        ],
-        "abbreviation": "PEAM",
-        "color": "#c42615",
-        "matchWins": 0,
-        "matchLosses": 0,
-        "gameWins": 0,
-        "gameLosses": 0,
-        "form": "-------"
-        },
+    
         {
         "position": 5,
         "team": "Generation zzz",
@@ -78,24 +80,9 @@
         "gameLosses": 2,
         "form": "-L-----"
         },
-        {
-        "position": 6,
-        "team": "F.C.P.R.E.M.I.X",
-        "players": [
-            "vaen",
-            "dynamight"
-        ],
-        "abbreviation": "FCPR",
-        "color": "#8fafff",
-        "matchWins": 0,
-        "matchLosses": 1,
-        "gameWins": 0,
-        "gameLosses": 2,
-        "form": "--L----"
-        },
         
         {
-        "position": 7,
+        "position": 6,
         "team": "Nyarsonists",
         "players": [
             "Nae",
@@ -108,6 +95,22 @@
         "gameWins": 0,
         "gameLosses": 2,
         "form": "-L-----"
+        },
+
+            {
+        "position": 7,
+        "team": "F.C.P.R.E.M.I.X",
+        "players": [
+            "vaen",
+            "dynamight"
+        ],
+        "abbreviation": "FCPR",
+        "color": "#8fafff",
+        "matchWins": 0,
+        "matchLosses": 2,
+        "gameWins": 1,
+        "gameLosses": 4,
+        "form": "-LL----"
         },
         
         {
