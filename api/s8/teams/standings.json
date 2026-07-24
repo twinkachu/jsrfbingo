@@ -1,7 +1,23 @@
 {
     "standings": [
-        {
+         {
         "position": 1,
+        "team": "No Bun Intended",
+        "players": [
+            "yomsa",
+            "LaurieDBunnykins"
+        ],
+        "abbreviation": "BUN",
+        "color": "#fda3cb",
+        "matchWins": 3,
+        "matchLosses": 0,
+        "gameWins": 6,
+        "gameLosses": 0,
+        "form": "WWW----"
+        },
+        
+        {
+        "position": 2,
         "team": "Cook or Be Cooked",
         "players": [
             "Miku_ds",
@@ -16,21 +32,6 @@
         "form": "-WW----"
         },
         
-          {
-        "position": 2,
-        "team": "No Bun Intended",
-        "players": [
-            "yomsa",
-            "LaurieDBunnykins"
-        ],
-        "abbreviation": "BUN",
-        "color": "#fda3cb",
-        "matchWins": 2,
-        "matchLosses": 0,
-        "gameWins": 4,
-        "gameLosses": 0,
-        "form": "-WW----"
-        },
 
          {
         "position": 3,
@@ -64,25 +65,9 @@
         "form": "WWL----"
         },
         
-    
-        {
-        "position": 5,
-        "team": "Generation zzz",
-        "players": [
-            "claws",
-            "Kevin"
-        ],
-        "abbreviation": "ZZZ",
-        "color": "#032595",
-        "matchWins": 0,
-        "matchLosses": 1,
-        "gameWins": 0,
-        "gameLosses": 2,
-        "form": "-L-----"
-        },
         
         {
-        "position": 6,
+        "position": 5,
         "team": "Nyarsonists",
         "players": [
             "Nae",
@@ -98,7 +83,7 @@
         },
 
             {
-        "position": 7,
+        "position": 6,
         "team": "F.C.P.R.E.M.I.X",
         "players": [
             "vaen",
@@ -111,6 +96,22 @@
         "gameWins": 1,
         "gameLosses": 4,
         "form": "-LL----"
+        },
+
+        {
+        "position": 7,
+        "team": "Generation zzz",
+        "players": [
+            "claws",
+            "Kevin"
+        ],
+        "abbreviation": "ZZZ",
+        "color": "#032595",
+        "matchWins": 0,
+        "matchLosses": 2,
+        "gameWins": 0,
+        "gameLosses": 4,
+        "form": "LL-----"
         },
         
         {
