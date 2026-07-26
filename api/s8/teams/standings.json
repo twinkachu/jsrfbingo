@@ -25,32 +25,15 @@
         ],
         "abbreviation": "COOK",
         "color": "#ee872b",
-        "matchWins": 2,
+        "matchWins": 3,
         "matchLosses": 0,
-        "gameWins": 4,
+        "gameWins": 6,
         "gameLosses": 0,
-        "form": "-WW----"
-        },
-        
-
-         {
-        "position": 3,
-        "team": "Peam Tame Nending",
-        "players": [
-            "nago",
-            "Flashy"
-        ],
-        "abbreviation": "PEAM",
-        "color": "#c42615",
-        "matchWins": 1,
-        "matchLosses": 0,
-        "gameWins": 2,
-        "gameLosses": 1,
-        "form": "-W-----"
+        "form": "WWW----"
         },
         
         {
-        "position": 4,
+        "position": 3,
         "team": "Night Ninjas",
         "players": [
             "jon",
@@ -63,6 +46,22 @@
         "gameWins": 4,
         "gameLosses": 2,
         "form": "WWL----"
+        },
+        
+        {
+        "position": 4,
+        "team": "Peam Tame Nending",
+        "players": [
+            "nago",
+            "Flashy"
+        ],
+        "abbreviation": "PEAM",
+        "color": "#c42615",
+        "matchWins": 1,
+        "matchLosses": 1,
+        "gameWins": 2,
+        "gameLosses": 3,
+        "form": "LW-----"
         },
         
         
