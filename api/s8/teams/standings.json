@@ -63,9 +63,23 @@
         "gameLosses": 3,
         "form": "LWW----"
         },
-
-            {
+{
         "position": 5,
+        "team": "0xSWARM",
+        "players": [
+            "7thAce",
+            "Bee"
+        ],
+        "abbreviation": "0xS",
+        "color": "#efe925",
+        "matchWins": 1,
+        "matchLosses": 2,
+        "gameWins": 2,
+        "gameLosses": 4,
+        "form": "LLW----"
+        }
+            {
+        "position": 6,
         "team": "F.C.P.R.E.M.I.X",
         "players": [
             "vaen",
@@ -78,22 +92,6 @@
         "gameWins": 1,
         "gameLosses": 4,
         "form": "-LL----"
-        },
-
-        {
-        "position": 6,
-        "team": "Generation zzz",
-        "players": [
-            "claws",
-            "Kevin"
-        ],
-        "abbreviation": "ZZZ",
-        "color": "#032595",
-        "matchWins": 0,
-        "matchLosses": 2,
-        "gameWins": 0,
-        "gameLosses": 4,
-        "form": "LL-----"
         },
 
         {
@@ -111,22 +109,23 @@
         "gameLosses": 4,
         "form": "-LL----"
         },
-        
+
         {
         "position": 8,
-        "team": "0xSWARM",
+        "team": "Generation zzz",
         "players": [
-            "7thAce",
-            "Bee"
+            "claws",
+            "Kevin"
         ],
-        "abbreviation": "0xS",
-        "color": "#efe925",
+        "abbreviation": "ZZZ",
+        "color": "#032595",
         "matchWins": 0,
-        "matchLosses": 2,
+        "matchLosses": 3,
         "gameWins": 0,
-        "gameLosses": 4,
-        "form": "LL-----"
-        }
+        "gameLosses": 6,
+        "form": "LLL----"
+        },
+        
     ],
     "playoffs": {
         "semiFinals": [
@@ -207,7 +206,7 @@
             {
                 "team1": "0xSWARM",
                 "team2": "Generation zzz",
-                "score1": 0,
+                "score1": 2,
                 "score2": 0
             },
             {
