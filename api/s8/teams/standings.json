@@ -63,7 +63,8 @@
         "gameLosses": 3,
         "form": "LWW----"
         },
-{
+        
+        {
         "position": 5,
         "team": "0xSWARM",
         "players": [
@@ -238,7 +239,7 @@
             {
                 "team1": "Night Ninjas",
                 "team2": "Nyarsonists",
-                "score1": 0,
+                "score1": 2,
                 "score2": 0
             },
             {
