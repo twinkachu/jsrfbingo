@@ -15,9 +15,25 @@
         "gameLosses": 0,
         "form": "WWW----"
         },
+
+         {
+        "position": 2,
+        "team": "Night Ninjas",
+        "players": [
+            "jon",
+            "SyiLenSa"
+        ],
+        "abbreviation": "NIN",
+        "color": "#b831e3",
+        "matchWins": 3,
+        "matchLosses": 1,
+        "gameWins": 6,
+        "gameLosses": 2,
+        "form": "WWLW---"
+        },
         
         {
-        "position": 2,
+        "position": 3,
         "team": "Cook or Be Cooked",
         "players": [
             "Miku_ds",
@@ -30,22 +46,6 @@
         "gameWins": 6,
         "gameLosses": 0,
         "form": "WWW----"
-        },
-        
-        {
-        "position": 3,
-        "team": "Night Ninjas",
-        "players": [
-            "jon",
-            "SyiLenSa"
-        ],
-        "abbreviation": "NIN",
-        "color": "#b831e3",
-        "matchWins": 2,
-        "matchLosses": 1,
-        "gameWins": 4,
-        "gameLosses": 2,
-        "form": "WWL----"
         },
         
         {
@@ -104,10 +104,10 @@
         "abbreviation": "NYA",
         "color": "#1c890c",
         "matchWins": 0,
-        "matchLosses": 2,
+        "matchLosses": 3,
         "gameWins": 0,
-        "gameLosses": 4,
-        "form": "-LL----"
+        "gameLosses": 6,
+        "form": "-LLL---"
         },
 
         {
