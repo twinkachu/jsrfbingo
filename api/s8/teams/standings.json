@@ -16,22 +16,6 @@
         "form": "WWW-W--"
         },
 
-         {
-        "position": 3,
-        "team": "Night Ninjas",
-        "players": [
-            "jon",
-            "SyiLenSa"
-        ],
-        "abbreviation": "NIN",
-        "color": "#b831e3",
-        "matchWins": 3,
-        "matchLosses": 1,
-        "gameWins": 6,
-        "gameLosses": 2,
-        "form": "WWLW---"
-        },
-        
         {
         "position": 2,
         "team": "Cook or Be Cooked",
@@ -46,6 +30,22 @@
         "gameWins": 9,
         "gameLosses": 3,
         "form": "WWWWL--"
+        },
+        
+        {
+        "position": 3,
+        "team": "Night Ninjas",
+        "players": [
+            "jon",
+            "SyiLenSa"
+        ],
+        "abbreviation": "NIN",
+        "color": "#b831e3",
+        "matchWins": 3,
+        "matchLosses": 1,
+        "gameWins": 6,
+        "gameLosses": 2,
+        "form": "WWLW---"
         },
         
         {
