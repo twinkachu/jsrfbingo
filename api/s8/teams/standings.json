@@ -17,7 +17,7 @@
         },
 
          {
-        "position": 2,
+        "position": 3,
         "team": "Night Ninjas",
         "players": [
             "jon",
@@ -33,7 +33,7 @@
         },
         
         {
-        "position": 3,
+        "position": 2,
         "team": "Cook or Be Cooked",
         "players": [
             "Miku_ds",
@@ -41,11 +41,11 @@
         ],
         "abbreviation": "COOK",
         "color": "#ee872b",
-        "matchWins": 3,
+        "matchWins": 4,
         "matchLosses": 1,
-        "gameWins": 7,
-        "gameLosses": 2,
-        "form": "WWW-L--"
+        "gameWins": 9,
+        "gameLosses": 3,
+        "form": "WWWWL--"
         },
         
         {
@@ -121,10 +121,10 @@
         "abbreviation": "ZZZ",
         "color": "#032595",
         "matchWins": 0,
-        "matchLosses": 3,
-        "gameWins": 0,
-        "gameLosses": 6,
-        "form": "LLL----"
+        "matchLosses": 4,
+        "gameWins": 1,
+        "gameLosses": 8,
+        "form": "LLLL---"
         }
         
     ],
