@@ -1,16 +1,4 @@
-const MIRRORS = [
-  { host: "bingo.kevcyg.net", label: "Bingo" },
-  { host: "bango.kevcyg.net", label: "Bango" },
-  { host: "bongo.kevcyg.net", label: "Bongo" },
-  { host: "bungo.kevcyg.net", label: "Bungo" }
-];
-
-const CHAT_SERVERS = {
-  "bingo.kevcyg.net": "wss://chit.kevcyg.net",
-  "bango.kevcyg.net": "wss://chat.kevcyg.net",
-  "bongo.kevcyg.net": "wss://chot.kevcyg.net",
-  "bungo.kevcyg.net": "wss://chut.kevcyg.net"
-};
+const CHAT_SERVER = "wss://chat.kevcyg.net";
 
 let activeFeedSocket = null;
 let activeFeedReconnectTimer = null;
@@ -42,6 +30,11 @@ const SPECTATOR_TEAM_COLORS = new Set([
   "#CCCCCC",
   "#C0C0C0"
 ]);
+const BOARD_DISTRICT_GROUPS = [
+  { color: "green", areas: ["Shibuya", "Chuo", "Hikage", "Dogen"] },
+  { color: "red", areas: ["Sewers", "Kibo", "FRZ", "Btm pt.", "RDH"] },
+  { color: "blue", areas: ["99th", "SDPP", "HWY0", "Sky Dino", "Stadium"] }
+];
 const BINGO_LINES = [
   [0, 1, 2, 3, 4],
   [5, 6, 7, 8, 9],
@@ -58,7 +51,6 @@ const BINGO_LINES = [
 ];
 
 const BASE = {
-  mirror: "bingo.kevcyg.net",
   leftName: "",
   rightName: "",
   hueShift: 0,
@@ -75,7 +67,7 @@ const BASE = {
 const FIXED_LAYOUT = {
   canvasWidth: 1920,
   canvasHeight: 1080,
-  board: { x: 715, y: 606, w: 490, h: 475 },
+  board: { x: 722.5, y: 611, w: 475, h: 469 },
   chat: { x: 0, y: 760, w: 440, h: 320 },
   points: { x: 1480, y: 760, w: 440, h: 320 },
   timer: { x: 906, y: 6, w: 109, h: 57 }
@@ -227,35 +219,6 @@ function observeCanvasReferenceScale(canvas) {
     }
   });
   canvasReferenceScaleObserver.observe(canvas);
-}
-
-function mirrorLabel(mirrorHost) {
-  const host = normalizeMirror(mirrorHost);
-  const mirror = MIRRORS.find((candidate) => candidate.host === host);
-  return mirror ? `${mirror.label} (${mirror.host})` : host;
-}
-
-function normalizeMirror(raw) {
-  if (!raw) return BASE.mirror;
-  const host = String(raw)
-    .trim()
-    .replace(/^https?:\/\//, "")
-    .replace(/\/.*$/, "")
-    .toLowerCase();
-  return MIRRORS.some((mirror) => mirror.host === host) ? host : BASE.mirror;
-}
-
-function buildSources(mirrorHost) {
-  const mirror = normalizeMirror(mirrorHost);
-  const origin = `https://${mirror}`;
-  const mirrorParam = encodeURIComponent(mirror);
-  return {
-    board: `${origin}/static_board?mirror=${mirrorParam}`
-  };
-}
-
-function chatServerForMirror(mirrorHost) {
-  return CHAT_SERVERS[normalizeMirror(mirrorHost)];
 }
 
 function closeActiveFeedSocket() {
@@ -771,6 +734,90 @@ function squareHasGraffiti(square) {
   return String(square?.name ?? "").toUpperCase().includes("GRAFFITI");
 }
 
+function contrastingTextColor(color) {
+  const rgb = parseHexColor(color);
+  if (!rgb) return "#f4ffff";
+  const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
+  return luminance > 0.55 ? "#071b1b" : "#f4ffff";
+}
+
+function parseBoardSquareText(square) {
+  const name = String(square?.name ?? square?.text ?? "").trim();
+  const district = BOARD_DISTRICT_GROUPS.find(({ areas }) => areas.some((area) => name.includes(area)));
+  const area = district?.areas.find((candidate) => name.includes(candidate)) || "";
+  const goal = name.includes("GRAFFITI")
+    ? "GRAFFITI"
+    : name.includes("Unlock")
+      ? `Unlock ${name.split("Unlock")[1]?.trim() || "Unlock"}`
+      : name.includes("-")
+        ? name.slice(name.indexOf("-") + 1).trim()
+        : name;
+  return { area, goal, district: district?.color || "" };
+}
+
+function renderBoard(slot, board, markingSquareIndexes = new Set()) {
+  if (!slot) return;
+  const grid = slot.querySelector(".board-grid");
+  const status = slot.querySelector(".board-status");
+  if (!grid || !status) return;
+
+  const squares = Array.isArray(board) ? board.slice(0, BOARD_SIZE) : [];
+  const ready = squares.length === BOARD_SIZE;
+  status.classList.toggle("hidden", ready);
+  if (!ready) return;
+
+  grid.replaceChildren();
+  const fragment = document.createDocumentFragment();
+  squares.forEach((square, index) => {
+    const { area, goal, district } = parseBoardSquareText(square);
+    const color = normalizeTeamColor(square?.color);
+    const claimed = isClaimedSquareColor(color);
+    const graffiti = squareHasGraffiti(square);
+    const tile = document.createElement("article");
+    tile.className = "board-square";
+    tile.classList.toggle("board-square-claimed", claimed);
+    tile.classList.toggle("board-square-graffiti", graffiti);
+    tile.classList.toggle("board-square-mark-flash", markingSquareIndexes.has(index));
+    tile.style.setProperty("--square-fill", claimed ? color : "#111");
+    tile.style.setProperty("--square-ink", graffiti ? "#fff" : contrastingTextColor(claimed ? color : ""));
+    tile.innerHTML = `
+      <div class="board-square-text">
+        <span class="board-square-area"></span>
+        <span class="board-square-goal"></span>
+      </div>
+    `;
+    tile.classList.toggle("board-square-unclaimed", !claimed);
+    tile.classList.toggle(`board-square-${district}`, !claimed && Boolean(district));
+    tile.querySelector(".board-square-area").textContent = area;
+    tile.querySelector(".board-square-goal").textContent = goal;
+    fragment.append(tile);
+  });
+  grid.append(fragment);
+}
+
+function createBoard(slot) {
+  slot.innerHTML = `
+    <div class="board-shell">
+      <div class="board-grid" aria-label="Bingo board"></div>
+      <div class="board-status">Waiting for board</div>
+    </div>
+  `;
+  renderBoard(slot, []);
+}
+
+function newlyClaimedSquareIndexes(previousBoard, nextBoard) {
+  if (!Array.isArray(previousBoard) || previousBoard.length !== BOARD_SIZE) return new Set();
+  if (!Array.isArray(nextBoard) || nextBoard.length !== BOARD_SIZE) return new Set();
+
+  const indexes = new Set();
+  nextBoard.forEach((square, index) => {
+    const wasClaimed = isClaimedSquareColor(normalizeTeamColor(previousBoard[index]?.color));
+    const isClaimed = isClaimedSquareColor(normalizeTeamColor(square?.color));
+    if (!wasClaimed && isClaimed) indexes.add(index);
+  });
+  return indexes;
+}
+
 function addToCount(map, key, amount = 1) {
   map.set(key, (map.get(key) || 0) + amount);
 }
@@ -1098,12 +1145,13 @@ function createTimer(slot) {
   `;
 }
 
-function connectGameFeed({ chatSlot, pointsSlot, timerSlot }, mirrorHost) {
-  if (!chatSlot && !pointsSlot && !timerSlot) return;
-  const server = chatServerForMirror(mirrorHost);
+function connectGameFeed({ boardSlot, chatSlot, pointsSlot, timerSlot }) {
+  if (!boardSlot && !chatSlot && !pointsSlot && !timerSlot) return;
+  const server = CHAT_SERVER;
   const chatLog = chatSlot ? createChat(chatSlot) : null;
   const state = {
     board: [],
+    markingSquareIndexes: new Set(),
     users: [],
     gameRunning: false,
     startClientMs: null,
@@ -1115,6 +1163,8 @@ function connectGameFeed({ chatSlot, pointsSlot, timerSlot }, mirrorHost) {
   const updateScoreboard = (status = "") => {
     renderScoreboard(pointsSlot, calculateScoreboard(state.board, state.users), status);
   };
+
+  const updateBoard = () => renderBoard(boardSlot, state.board, state.markingSquareIndexes);
 
   const updateTimer = (status = state.feedStatus) => {
     if (state.gameRunning && state.startClientMs !== null) {
@@ -1214,7 +1264,12 @@ function connectGameFeed({ chatSlot, pointsSlot, timerSlot }, mirrorHost) {
         }
 
         if (message.type === "board" || message.type === "new_board") {
-          state.board = Array.isArray(message.data) ? message.data : [];
+          const nextBoard = Array.isArray(message.data) ? message.data : [];
+          state.markingSquareIndexes = message.type === "board"
+            ? newlyClaimedSquareIndexes(state.board, nextBoard)
+            : new Set();
+          state.board = nextBoard;
+          updateBoard();
           updateScoreboard();
           if (message.type === "new_board") {
             state.gameRunning = false;
@@ -1294,6 +1349,7 @@ function connectGameFeed({ chatSlot, pointsSlot, timerSlot }, mirrorHost) {
   };
 
   updateScoreboard();
+  updateBoard();
   updateTimer();
   connectSocket();
 
@@ -1305,7 +1361,6 @@ function connectGameFeed({ chatSlot, pointsSlot, timerSlot }, mirrorHost) {
 function parseConfig(searchParams) {
   const config = createConfig();
 
-  config.mirror = normalizeMirror(searchParams.get("mirror"));
   config.leftName = searchParams.has("leftName")
     ? readPlayerName(searchParams.get("leftName"))
     : "";
@@ -1330,7 +1385,6 @@ function parseConfig(searchParams) {
 
 function configToSerializable(config) {
   const serialized = createConfig();
-  serialized.mirror = normalizeMirror(config.mirror);
   serialized.leftName = serializePlayerName(config.leftName);
   serialized.rightName = serializePlayerName(config.rightName);
   for (const key of FX_FIELDS) {
@@ -1386,7 +1440,6 @@ function buildUrl(config, obsMode) {
   url.search = "";
   const p = url.searchParams;
   p.set("mode", obsMode ? "obs" : "config");
-  p.set("mirror", normalizeMirror(config.mirror));
   p.set("leftName", serializePlayerName(config.leftName));
   p.set("rightName", serializePlayerName(config.rightName));
   for (const key of FX_FIELDS) {
@@ -1410,7 +1463,7 @@ function buildElementCard(key, name, data) {
   `;
 }
 
-function createSlot(key, name, preview, isEnabled, obsMode, sources, mirrorHost) {
+function createSlot(key, name, preview, isEnabled, obsMode) {
   if (!isEnabled) return null;
   const cfg = FIXED_LAYOUT[key];
 
@@ -1437,6 +1490,11 @@ function createSlot(key, name, preview, isEnabled, obsMode, sources, mirrorHost)
     slot.classList.add("fg");
   }
 
+  if (key === "board") {
+    createBoard(slot);
+    return slot;
+  }
+
   if (key === "chat") {
     return slot;
   }
@@ -1450,14 +1508,6 @@ function createSlot(key, name, preview, isEnabled, obsMode, sources, mirrorHost)
     createTimer(slot);
     return slot;
   }
-
-  const iframe = document.createElement("iframe");
-  iframe.src = sources[key];
-  iframe.loading = "lazy";
-  iframe.referrerPolicy = "no-referrer";
-  iframe.setAttribute("scrolling", "no");
-
-  slot.appendChild(iframe);
 
   return slot;
 }
@@ -1474,20 +1524,19 @@ function renderLayout(config, obsMode) {
   observeCanvasReferenceScale(canvas);
   canvas.style.setProperty("--layout-fx-filter", buildLayoutFxFilter(config));
   canvas.style.setProperty("--nameplate-fx-filter", buildNameplateFxFilter(config));
-  const sources = buildSources(config.mirror);
-  const mirrorHost = normalizeMirror(config.mirror);
-  const gameSlots = { chatSlot: null, pointsSlot: null, timerSlot: null };
+  const gameSlots = { boardSlot: null, chatSlot: null, pointsSlot: null, timerSlot: null };
 
   for (const { key, name, preview } of ELEMENT_ORDER) {
-    const slot = createSlot(key, name, preview, config[key].show, obsMode, sources, mirrorHost);
+    const slot = createSlot(key, name, preview, config[key].show, obsMode);
     if (!slot) continue;
+    if (key === "board") gameSlots.boardSlot = slot;
     if (key === "chat") gameSlots.chatSlot = slot;
     if (key === "points") gameSlots.pointsSlot = slot;
     if (key === "timer") gameSlots.timerSlot = slot;
     canvas.appendChild(slot);
   }
 
-  if (obsMode) connectGameFeed(gameSlots, mirrorHost);
+  if (obsMode) connectGameFeed(gameSlots);
 
   canvas.appendChild(createOverlayImage({
     className: "overlay color-fx-target",
@@ -1518,30 +1567,14 @@ function renderLayout(config, obsMode) {
     const renderWidth = canvas.clientWidth || 1;
     const scale = renderWidth / FIXED_LAYOUT.canvasWidth;
     if (previewMeta) {
-      previewMeta.textContent = `Mirror: ${mirrorLabel(config.mirror)}. Preview scale: ${(scale * 100).toFixed(1)}% (fixed ${FIXED_LAYOUT.canvasWidth}x${FIXED_LAYOUT.canvasHeight} layout).`;
+      previewMeta.textContent = `Preview scale: ${(scale * 100).toFixed(1)}% (fixed ${FIXED_LAYOUT.canvasWidth}x${FIXED_LAYOUT.canvasHeight} layout).`;
     }
   }
 }
 
 function syncConfigToForm(config) {
-  const mirrorSelect = byId("mirrorSelect");
   const leftName = byId("leftName");
   const rightName = byId("rightName");
-  mirrorSelect.innerHTML = MIRRORS.map((mirror) => `
-    <label class="mirror-option">
-      <input
-        type="radio"
-        name="configMirror"
-        data-field="mirror"
-        value="${mirror.host}"
-      >
-      <span>${mirror.label}</span>
-    </label>
-  `).join("");
-  const mirror = normalizeMirror(config.mirror);
-  mirrorSelect.querySelectorAll("[data-field='mirror']").forEach((input) => {
-    input.checked = input.value === mirror;
-  });
   leftName.value = String(config.leftName ?? "");
   rightName.value = String(config.rightName ?? "");
   for (const key of FX_FIELDS) {
@@ -1555,8 +1588,6 @@ function syncConfigToForm(config) {
 
 function readConfigFromForm(currentConfig) {
   const next = createConfig(currentConfig);
-  const mirrorInput = document.querySelector("#mirrorSelect [data-field='mirror']:checked");
-  next.mirror = normalizeMirror(mirrorInput ? mirrorInput.value : BASE.mirror);
   next.leftName = readPlayerName(byId("leftName").value);
   next.rightName = readPlayerName(byId("rightName").value);
   for (const key of FX_FIELDS) {
@@ -1595,7 +1626,6 @@ function copyObsUrl(config) {
 }
 
 function wireUi(state) {
-  const mirrorSelect = byId("mirrorSelect");
   const leftName = byId("leftName");
   const rightName = byId("rightName");
   const elementsRoot = byId("elementsRoot");
@@ -1608,7 +1638,6 @@ function wireUi(state) {
     updateUrlOutput(state.config);
   };
 
-  mirrorSelect.addEventListener("change", onAnyChange);
   leftName.addEventListener("input", onAnyChange);
   rightName.addEventListener("input", onAnyChange);
   for (const key of FX_FIELDS) {
@@ -1629,8 +1658,6 @@ function wireUi(state) {
 
 function readObsMenuConfig(root, currentConfig) {
   const next = createConfig(currentConfig);
-  const mirrorInput = root.querySelector("[data-obs-field='mirror']:checked");
-  next.mirror = normalizeMirror(mirrorInput ? mirrorInput.value : BASE.mirror);
   next.leftName = readPlayerName(root.querySelector("[data-obs-field='leftName']").value);
   next.rightName = readPlayerName(root.querySelector("[data-obs-field='rightName']").value);
   for (const key of FX_FIELDS) {
@@ -1645,10 +1672,6 @@ function readObsMenuConfig(root, currentConfig) {
 }
 
 function syncObsMenuValues(root, config) {
-  const mirror = normalizeMirror(config.mirror);
-  root.querySelectorAll("[data-obs-field='mirror']").forEach((input) => {
-    input.checked = input.value === mirror;
-  });
   root.querySelector("[data-obs-field='leftName']").value = String(config.leftName ?? "");
   root.querySelector("[data-obs-field='rightName']").value = String(config.rightName ?? "");
   for (const key of FX_FIELDS) {
@@ -1673,23 +1696,6 @@ function setupObsMenu(state) {
     <button class="obs-menu-hitarea" id="obsMenuHitArea" aria-label="Open OBS config"></button>
     <section class="obs-menu hidden" id="obsMenuPanel" aria-label="OBS config">
       <h2>OBS Config</h2>
-      <div class="row">
-        <label>Gameplay mirror</label>
-        <div class="obs-mirror-grid" role="radiogroup" aria-label="Gameplay mirror">
-          ${MIRRORS.map((mirror, idx) => `
-            <label class="obs-mirror-option">
-              <input
-                data-obs-field="mirror"
-                type="radio"
-                name="obsMirror"
-                value="${mirror.host}"
-                ${idx === 0 ? "checked" : ""}
-              >
-              <span>${mirror.label}</span>
-            </label>
-          `).join("")}
-        </div>
-      </div>
       <div class="row">
         <label>Left Player Name</label>
         <input data-obs-field="leftName" type="text" maxlength="24">
