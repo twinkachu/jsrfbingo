@@ -761,7 +761,7 @@ button:hover { background: #166c75; }
 .board-square-area {
   max-width: 100%;
   color: var(--square-ink);
-  font-size: clamp(10px, 3.5cqw, 17px);
+  font-size: clamp(9px, 3.3cqw, 16px);
   font-weight: 700;
   line-height: 1.1;
 }
@@ -769,7 +769,7 @@ button:hover { background: #166c75; }
 .board-square-goal {
   max-width: 100%;
   color: var(--square-ink);
-  font-size: clamp(9px, 3cqw, 15px);
+  font-size: clamp(8px, 2.8cqw, 14px);
   line-height: 1.08;
   overflow-wrap: anywhere;
   text-wrap: balance;

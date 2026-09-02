@@ -1,4 +1,5 @@
 const CHAT_SERVER = "wss://chat.kevcyg.net";
+const OVERLAY_READER_USERNAME = `CUSTOM_OVERLAY_READER${String(Math.floor(Math.random() * 100000)).padStart(5, "0")}`;
 
 let activeFeedSocket = null;
 let activeFeedReconnectTimer = null;
@@ -741,6 +742,12 @@ function contrastingTextColor(color) {
   return luminance > 0.55 ? "#071b1b" : "#f4ffff";
 }
 
+function isPinkTeamColor(color) {
+  const rgb = parseHexColor(color);
+  if (!rgb) return false;
+  return rgb.r >= 180 && rgb.b >= 90 && rgb.r - rgb.g >= 50 && rgb.b - rgb.g >= 20;
+}
+
 function parseBoardSquareText(square) {
   const name = String(square?.name ?? square?.text ?? "").trim();
   const district = BOARD_DISTRICT_GROUPS.find(({ areas }) => areas.some((area) => name.includes(area)));
@@ -779,7 +786,10 @@ function renderBoard(slot, board, markingSquareIndexes = new Set()) {
     tile.classList.toggle("board-square-graffiti", graffiti);
     tile.classList.toggle("board-square-mark-flash", markingSquareIndexes.has(index));
     tile.style.setProperty("--square-fill", claimed ? color : "#111");
-    tile.style.setProperty("--square-ink", graffiti ? "#fff" : contrastingTextColor(claimed ? color : ""));
+    tile.style.setProperty(
+      "--square-ink",
+      graffiti || isPinkTeamColor(color) ? "#fff" : contrastingTextColor(claimed ? color : "")
+    );
     tile.innerHTML = `
       <div class="board-square-text">
         <span class="board-square-area"></span>
@@ -1236,7 +1246,7 @@ function connectGameFeed({ boardSlot, chatSlot, pointsSlot, timerSlot }) {
         updateScoreboard();
         setFeedStatus();
         resetReconnectBackoffAfterStableConnection(socket);
-        socket.send(JSON.stringify({ username: "CUSTOM_OVERLAY_READER" }));
+        socket.send(JSON.stringify({ username: OVERLAY_READER_USERNAME }));
         socket.send(JSON.stringify({ type: "info", data: { type: "Start Time" } }));
         socket.send(JSON.stringify({ type: "info", data: { type: "Game Active" } }));
       });
