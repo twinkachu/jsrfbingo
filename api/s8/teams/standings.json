@@ -9,11 +9,11 @@
         ],
         "abbreviation": "BUN",
         "color": "#fda3cb",
-        "matchWins": 4,
+        "matchWins": 7,
         "matchLosses": 0,
-        "gameWins": 8,
+        "gameWins": 10,
         "gameLosses": 1,
-        "form": "WWWWWXX"
+        "form": "WWWWWWW"
         },
 
         {
@@ -41,11 +41,11 @@
         ],
         "abbreviation": "NIN",
         "color": "#b831e3",
-        "matchWins": 3,
+        "matchWins": 4,
         "matchLosses": 2,
         "gameWins": 6,
         "gameLosses": 4,
-        "form": "WWLWX-L"
+        "form": "WWLWW-L"
         },
         
         {
@@ -73,11 +73,11 @@
         ],
         "abbreviation": "0xS",
         "color": "#efe925",
-        "matchWins": 1,
+        "matchWins": 3,
         "matchLosses": 2,
         "gameWins": 2,
         "gameLosses": 4,
-        "form": "LLWXX--"
+        "form": "LLWWW--"
         },
 
          {
@@ -89,11 +89,11 @@
         ],
         "abbreviation": "ZZZ",
         "color": "#032595",
-        "matchWins": 0,
+        "matchWins": 2,
         "matchLosses": 4,
         "gameWins": 1,
         "gameLosses": 8,
-        "form": "LLLL-XX"
+        "form": "LLLL-WW"
         },
             {
         "position": 7,
@@ -104,11 +104,11 @@
         ],
         "abbreviation": "FCPR",
         "color": "#8fafff",
-        "matchWins": 0,
-        "matchLosses": 2,
+        "matchWins": 1,
+        "matchLosses": 6,
         "gameWins": 1,
         "gameLosses": 4,
-        "form": "XLLXXXX"
+        "form": "WLLLLLL"
         },
 
         {
@@ -121,10 +121,10 @@
         "abbreviation": "NYA",
         "color": "#1c890c",
         "matchWins": 0,
-        "matchLosses": 3,
+        "matchLosses": 7,
         "gameWins": 0,
         "gameLosses": 6,
-        "form": "XLLLXXX"
+        "form": "LLLLLLL"
         }
 
         
