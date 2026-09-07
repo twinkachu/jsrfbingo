@@ -13,7 +13,7 @@
         "matchLosses": 0,
         "gameWins": 8,
         "gameLosses": 1,
-        "form": "WWW-W--"
+        "form": "WWWWWXX"
         },
 
         {
@@ -42,10 +42,10 @@
         "abbreviation": "NIN",
         "color": "#b831e3",
         "matchWins": 3,
-        "matchLosses": 1,
+        "matchLosses": 2,
         "gameWins": 6,
-        "gameLosses": 2,
-        "form": "WWLW---"
+        "gameLosses": 4,
+        "form": "WWLWX-L"
         },
         
         {
@@ -57,11 +57,11 @@
         ],
         "abbreviation": "PEAM",
         "color": "#c42615",
-        "matchWins": 2,
-        "matchLosses": 1,
-        "gameWins": 4,
-        "gameLosses": 3,
-        "form": "LWW----"
+        "matchWins": 3,
+        "matchLosses": 2,
+        "gameWins": 6,
+        "gameLosses": 5,
+        "form": "LWWL--W"
         },
         
         {
@@ -77,42 +77,11 @@
         "matchLosses": 2,
         "gameWins": 2,
         "gameLosses": 4,
-        "form": "LLW----"
+        "form": "LLWXX--"
         },
-            {
+
+         {
         "position": 6,
-        "team": "F.C.P.R.E.M.I.X",
-        "players": [
-            "vaen",
-            "dynamight"
-        ],
-        "abbreviation": "FCPR",
-        "color": "#8fafff",
-        "matchWins": 0,
-        "matchLosses": 2,
-        "gameWins": 1,
-        "gameLosses": 4,
-        "form": "-LL----"
-        },
-
-        {
-        "position": 7,
-        "team": "Nyarsonists",
-        "players": [
-            "Nae",
-            "korenaz"
-        ],
-        "abbreviation": "NYA",
-        "color": "#1c890c",
-        "matchWins": 0,
-        "matchLosses": 3,
-        "gameWins": 0,
-        "gameLosses": 6,
-        "form": "-LLL---"
-        },
-
-        {
-        "position": 8,
         "team": "Generation zzz",
         "players": [
             "claws",
@@ -124,8 +93,40 @@
         "matchLosses": 4,
         "gameWins": 1,
         "gameLosses": 8,
-        "form": "LLLL---"
+        "form": "LLLL-XX"
+        },
+            {
+        "position": 7,
+        "team": "F.C.P.R.E.M.I.X",
+        "players": [
+            "vaen",
+            "dynamight"
+        ],
+        "abbreviation": "FCPR",
+        "color": "#8fafff",
+        "matchWins": 0,
+        "matchLosses": 2,
+        "gameWins": 1,
+        "gameLosses": 4,
+        "form": "XLLXXXX"
+        },
+
+        {
+        "position": 8,
+        "team": "Nyarsonists",
+        "players": [
+            "Nae",
+            "korenaz"
+        ],
+        "abbreviation": "NYA",
+        "color": "#1c890c",
+        "matchWins": 0,
+        "matchLosses": 3,
+        "gameWins": 0,
+        "gameLosses": 6,
+        "form": "XLLLXXX"
         }
+
         
     ],
     "playoffs": {
@@ -245,7 +246,7 @@
             {
                 "team1": "No Bun Intended",
                 "team2": "Team Name Pending",
-                "score1": 0,
+                "score1": 2,
                 "score2": 0
             },
             {
@@ -318,7 +319,7 @@
                 "team1": "Night Ninjas",
                 "team2": "Team Name Pending",
                 "score1": 0,
-                "score2": 0
+                "score2": 2
             },
             {
                 "team1": "No Bun Intended",
