@@ -2,30 +2,23 @@
 
 @font-face {
   font-family: "Jet Set";
-  src: url("./fonts/JetSet.ttf") format("truetype");
+  src: url("./fonts/JetSetAlt.ttf") format("truetype");
   font-style: normal;
   font-weight: 400;
   font-display: swap;
 }
 
-@font-face {
-  font-family: "Jet Set";
-  src: url("./fonts/JetSet-Italic.ttf") format("truetype");
-  font-style: italic;
-  font-weight: 400;
-  font-display: swap;
-}
 
 :root {
   --bg-tile: #53b6bc;
   --bg-grid: #2d9ea3;
   --panel: #092f34;
-  --slot-bg: #173c39;
+  --slot-bg: #183c39;
   --ink: #e7ffff;
   --muted: #9ed8d8;
   --accent: #74f0eb;
-  --font: "Trebuchet MS", "Segoe UI", Tahoma, sans-serif;
-  --display-font: "Jet Set", "Trebuchet MS", sans-serif;
+  --font: "Jet Set", sans-serif;
+  --display-font: "Jet Set", sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -365,6 +358,15 @@ button:hover { background: #166c75; }
   font-size: 0.84rem;
 }
 
+.frame-shadow {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 19;
+}
+
 .overlay {
   position: absolute;
   inset: 0;
@@ -669,13 +671,13 @@ button:hover { background: #166c75; }
   position: relative;
   width: 100%;
   height: 100%;
-  padding: 6px 6px 0;
+  padding: 12px 12px 0;
   overflow: hidden;
   isolation: isolate;
   background: transparent;
   border: 0;
   border-radius: 12px 12px 0 0;
-  box-shadow: none;
+  box-shadow: inset 0 0 0 1px rgba(126, 239, 234, 0.22);
 }
 
 .board-shell::before {
@@ -684,13 +686,26 @@ button:hover { background: #166c75; }
   inset: 0;
   z-index: 0;
   border-radius: inherit;
-  background: #183c39;
-  box-shadow: inset 0 12px 24px rgba(139, 255, 249, 0.08);
+  background: var(--slot-bg);
+  filter: var(--layout-fx-filter, none);
+  pointer-events: none;
+}
+
+.board-shell::after {
+  content: "";
+  position: absolute;
+  inset: 6px 6px 0;
+  z-index: 0;
+  border: 1px solid rgba(126, 239, 234, 0.18);
+  border-radius: 9px 9px 0 0;
+  background: #0b2220;
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.38);
   filter: var(--layout-fx-filter, none);
   pointer-events: none;
 }
 
 .board-grid {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   grid-template-rows: repeat(5, minmax(0, 1fr));
@@ -700,9 +715,10 @@ button:hover { background: #166c75; }
   padding: 0;
   box-sizing: border-box;
   background: #0d0f12;
-  border: 1px solid rgba(255, 255, 255, 0.13);
+  border: 0px solid rgba(255, 255, 255, 0.13);
   border-bottom: 0;
   border-radius: 6px 6px 0 0;
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.4);
   container-type: inline-size;
   isolation: isolate;
   overflow: hidden;
@@ -840,7 +856,7 @@ button:hover { background: #166c75; }
   inset: 0;
   z-index: 0;
   border-radius: inherit;
-  background: #183c39;
+  background: var(--slot-bg);
   filter: var(--layout-fx-filter, none);
   pointer-events: none;
 }
@@ -1238,8 +1254,8 @@ body.obs-mode .snipe-notification-out {
   top: 713px;
   width: 430px;
   text-align: center;
-  font-family: "Jet Set", "Trebuchet MS", sans-serif;
-  font-style: italic;
+  font-family: "Jet Set", sans-serif;
+  font-style: normal;
   font-size: 2.1rem;
   line-height: 1;
   letter-spacing: 0.05em;
@@ -1260,21 +1276,12 @@ body.obs-mode .snipe-notification-out {
 .nameplate::before {
   z-index: 0;
   color: #d9fffc;
-  text-shadow:
-    0 0 8px rgba(147, 255, 250, 0.72),
-    0 0 22px rgba(111, 234, 230, 0.62),
-    0 0 46px rgba(96, 216, 210, 0.45);
+  text-shadow: none;
 }
 
 .nameplate::after {
   z-index: -1;
-  color: rgba(180, 255, 251, 0.95);
-  text-shadow:
-    0 0 10px rgba(147, 255, 250, 0.82),
-    0 0 30px rgba(111, 234, 230, 0.72),
-    0 0 56px rgba(96, 216, 210, 0.6);
-  filter: blur(1px) var(--nameplate-fx-filter, none);
-  opacity: 0.9;
+  display: none;
 }
 
 .bee-vfx-disabled .nameplate {
@@ -1700,6 +1707,11 @@ body.obs-mode .snipe-notification-out {
   line-height: 0.9;
 }
 
+.timer-stopped .custom-timer-value {
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+}
+
 .custom-timer-state {
   display: none;
   position: absolute;
@@ -1870,7 +1882,7 @@ body.obs-mode .snipe-notification-out {
   border: 1px solid rgba(124, 233, 228, 0.58);
   background: rgba(5, 24, 27, 0.62);
   color: #dcfffd;
-  font-family: "Jet Set", "Trebuchet MS", sans-serif;
+  font-family: "Jet Set", sans-serif;
   font-size: clamp(1rem, 1.8vw, 1.6rem);
   letter-spacing: 0.03em;
   text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.75);

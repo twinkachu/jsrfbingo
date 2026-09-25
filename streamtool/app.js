@@ -179,6 +179,35 @@ function createOverlayImage({ className, src, alt }) {
   return image;
 }
 
+function createFrameShadow(image) {
+  const shadow = document.createElement("canvas");
+  shadow.className = "frame-shadow";
+  shadow.setAttribute("aria-hidden", "true");
+
+  const draw = () => {
+    shadow.width = image.naturalWidth;
+    shadow.height = image.naturalHeight;
+    const context = shadow.getContext("2d");
+    if (!context) return;
+    // Expand the silhouette equally around each opening. The artwork above
+    // covers the original frame, leaving a hard inset shadow inside its cutouts.
+    const inset = 4;
+    for (const x of [-inset, 0, inset]) {
+      for (const y of [-inset, 0, inset]) {
+        context.drawImage(image, x, y);
+      }
+    }
+    context.globalCompositeOperation = "source-in";
+    context.fillStyle = "rgba(0, 0, 0, 0.4)";
+    context.fillRect(0, 0, shadow.width, shadow.height);
+    context.globalCompositeOperation = "source-over";
+  };
+
+  if (image.complete && image.naturalWidth) draw();
+  else image.addEventListener("load", draw, { once: true });
+  return shadow;
+}
+
 function createNameplate(className, name) {
   const nameplate = document.createElement("div");
   nameplate.className = `nameplate ${className}`;
@@ -805,6 +834,48 @@ function renderBoard(slot, board, markingSquareIndexes = new Set()) {
   grid.append(fragment);
 }
 
+function animateBoardRefresh(slot, getBoard) {
+  const grid = slot?.querySelector(".board-grid");
+  if (!grid) return Promise.resolve();
+
+  slot._boardRefreshAnimation?.cancel();
+  if (slot._boardRefreshSwapFrame) {
+    cancelAnimationFrame(slot._boardRefreshSwapFrame);
+    slot._boardRefreshSwapFrame = null;
+  }
+  const transitionId = (Number(slot.dataset.boardTransitionId) || 0) + 1;
+  slot.dataset.boardTransitionId = String(transitionId);
+  const duration = 520;
+  const swapAt = 220;
+  const animation = slot._boardRefreshAnimation = grid.animate([
+    { offset: 0, filter: "blur(0) saturate(1) brightness(1)", transform: "scale(1)", opacity: 1 },
+    { offset: 0.28, filter: "blur(7px) saturate(1.6) brightness(1.3)", transform: "scale(1.02)", opacity: 1 },
+    { offset: 0.43, filter: "blur(12px) saturate(2.4) brightness(3.2)", transform: "scale(1.03)", opacity: 1 },
+    { offset: 0.49, filter: "blur(11px) saturate(2.1) brightness(2.6)", transform: "scale(1.028)", opacity: 1 },
+    { offset: 0.68, filter: "blur(8px) saturate(1.6) brightness(1.6)", transform: "scale(1.02)", opacity: 1 },
+    { offset: 0.84, filter: "blur(4px) saturate(1.2) brightness(1.2)", transform: "scale(1.01)", opacity: 1 },
+    { offset: 1, filter: "blur(0) saturate(1) brightness(1)", transform: "scale(1)", opacity: 1 }
+  ], { duration, easing: "ease-in-out", fill: "both" });
+
+  const swapAtFlash = () => {
+    if (slot.dataset.boardTransitionId !== String(transitionId)) return;
+    if ((Number(animation.currentTime) || 0) < swapAt) {
+      slot._boardRefreshSwapFrame = requestAnimationFrame(swapAtFlash);
+      return;
+    }
+    slot._boardRefreshSwapFrame = null;
+    renderBoard(slot, getBoard());
+  };
+  slot._boardRefreshSwapFrame = requestAnimationFrame(swapAtFlash);
+
+  return animation.finished.then(() => {
+    if (slot.dataset.boardTransitionId !== String(transitionId)) return;
+    animation.cancel();
+    slot.dataset.boardTransitionId = "";
+    slot._boardRefreshAnimation = null;
+  }, () => {});
+}
+
 function createBoard(slot) {
   slot.innerHTML = `
     <div class="board-shell">
@@ -1072,15 +1143,16 @@ function renderScoreboard(slot, scoreboard, status = "") {
   renderScoreboardRows(list, scoreboard.teams);
 }
 
-function renderTimer(slot, elapsedMs, gameRunning, status = "") {
+function renderTimer(slot, elapsedMs, gameRunning, gameStopped, status = "") {
   if (!slot) return;
   const value = slot.querySelector(".custom-timer-value");
   const state = slot.querySelector(".custom-timer-state");
   if (!value || !state) return;
 
-  value.textContent = formatTimer(elapsedMs);
+  value.textContent = gameStopped ? "STOPPED" : formatTimer(elapsedMs);
   state.textContent = status || (gameRunning ? "LIVE" : "READY");
   slot.classList.toggle("timer-running", Boolean(gameRunning));
+  slot.classList.toggle("timer-stopped", Boolean(gameStopped));
 }
 
 function readInfoValue(data) {
@@ -1164,6 +1236,10 @@ function connectGameFeed({ boardSlot, chatSlot, pointsSlot, timerSlot }) {
     markingSquareIndexes: new Set(),
     users: [],
     gameRunning: false,
+    gameStarted: false,
+    gameStopped: false,
+    boardTransitionId: 0,
+    boardTransitioning: false,
     startClientMs: null,
     minimumElapsedMs: 0,
     elapsedMs: 0,
@@ -1174,13 +1250,17 @@ function connectGameFeed({ boardSlot, chatSlot, pointsSlot, timerSlot }) {
     renderScoreboard(pointsSlot, calculateScoreboard(state.board, state.users), status);
   };
 
-  const updateBoard = () => renderBoard(boardSlot, state.board, state.markingSquareIndexes);
+  const updateBoard = () => {
+    if (!state.boardTransitioning) {
+      renderBoard(boardSlot, state.board, state.markingSquareIndexes);
+    }
+  };
 
   const updateTimer = (status = state.feedStatus) => {
     if (state.gameRunning && state.startClientMs !== null) {
       state.elapsedMs = performance.now() - state.startClientMs;
     }
-    renderTimer(timerSlot, state.elapsedMs, state.gameRunning, status);
+    renderTimer(timerSlot, state.elapsedMs, state.gameRunning, state.gameStopped, status);
   };
 
   const setFeedStatus = (status = "") => {
@@ -1275,14 +1355,34 @@ function connectGameFeed({ boardSlot, chatSlot, pointsSlot, timerSlot }) {
 
         if (message.type === "board" || message.type === "new_board") {
           const nextBoard = Array.isArray(message.data) ? message.data : [];
+          const shouldAnimateBoard = message.type === "new_board"
+            && state.board.length === BOARD_SIZE
+            && nextBoard.length === BOARD_SIZE
+            && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
           state.markingSquareIndexes = message.type === "board"
             ? newlyClaimedSquareIndexes(state.board, nextBoard)
             : new Set();
           state.board = nextBoard;
-          updateBoard();
+          if (shouldAnimateBoard) {
+            state.boardTransitioning = true;
+            const transitionId = ++state.boardTransitionId;
+            animateBoardRefresh(boardSlot, () => state.board).finally(() => {
+              if (transitionId !== state.boardTransitionId) return;
+              state.boardTransitioning = false;
+              updateBoard();
+            });
+          } else {
+            boardSlot?._boardRefreshAnimation?.cancel();
+            if (boardSlot) boardSlot.dataset.boardTransitionId = "";
+            state.boardTransitionId += 1;
+            state.boardTransitioning = false;
+            updateBoard();
+          }
           updateScoreboard();
           if (message.type === "new_board") {
             state.gameRunning = false;
+            state.gameStarted = false;
+            state.gameStopped = false;
             state.startClientMs = null;
             state.minimumElapsedMs = 0;
             state.elapsedMs = 0;
@@ -1301,6 +1401,8 @@ function connectGameFeed({ boardSlot, chatSlot, pointsSlot, timerSlot }) {
           state.minimumElapsedMs = 0;
           if (applyStartTimestamp(state, message.data?.timestamp)) {
             state.gameRunning = true;
+            state.gameStarted = true;
+            state.gameStopped = false;
             updateTimer();
           }
           return;
@@ -1309,6 +1411,7 @@ function connectGameFeed({ boardSlot, chatSlot, pointsSlot, timerSlot }) {
         if (message.type === "result") {
           updateTimer();
           state.gameRunning = false;
+          state.gameStopped = true;
           updateTimer();
           return;
         }
@@ -1318,10 +1421,16 @@ function connectGameFeed({ boardSlot, chatSlot, pointsSlot, timerSlot }) {
           const infoType = String(info?.type ?? info?.name ?? "").toLowerCase();
           const value = readInfoValue(info);
           if (infoType === "start time") {
-            applyStartTimestamp(state, value);
+            if (applyStartTimestamp(state, value)) state.gameStarted = true;
             updateTimer();
           } else if (infoType === "game active") {
             state.gameRunning = isTruthyInfoValue(value);
+            if (state.gameRunning) {
+              state.gameStarted = true;
+              state.gameStopped = false;
+            } else if (state.gameStarted) {
+              state.gameStopped = true;
+            }
             updateTimer();
           }
         }
@@ -1548,11 +1657,12 @@ function renderLayout(config, obsMode) {
 
   if (obsMode) connectGameFeed(gameSlots);
 
-  canvas.appendChild(createOverlayImage({
+  const frameImage = createOverlayImage({
     className: "overlay color-fx-target",
     src: "./image.png",
     alt: "JSRF Bingo overlay"
-  }));
+  });
+  canvas.append(createFrameShadow(frameImage), frameImage);
 
   const centerDivider = document.createElement("div");
   centerDivider.className = "center-divider color-fx-target";
