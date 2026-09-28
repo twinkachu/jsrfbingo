@@ -57,11 +57,11 @@
         ],
         "abbreviation": "PEAM",
         "color": "#c42615",
-        "matchWins": 3,
+        "matchWins": 5,
         "matchLosses": 2,
-        "gameWins": 6,
-        "gameLosses": 5,
-        "form": "LWWL--W"
+        "gameWins": 10,
+        "gameLosses": 7,
+        "form": "LWWLWWW"
         },
         
         {
@@ -90,10 +90,10 @@
         "abbreviation": "ZZZ",
         "color": "#032595",
         "matchWins": 2,
-        "matchLosses": 4,
-        "gameWins": 1,
-        "gameLosses": 8,
-        "form": "LLLL-WW"
+        "matchLosses": 5,
+        "gameWins": 2,
+        "gameLosses": 10,
+        "form": "LLLLLWW"
         },
             {
         "position": 7,
