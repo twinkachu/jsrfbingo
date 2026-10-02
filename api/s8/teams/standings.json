@@ -18,38 +18,6 @@
 
         {
         "position": 2,
-        "team": "Cook or Be Cooked",
-        "players": [
-            "Miku_ds",
-            "Fatalr0ck"
-        ],
-        "abbreviation": "COOK",
-        "color": "#ee872b",
-        "matchWins": 4,
-        "matchLosses": 1,
-        "gameWins": 9,
-        "gameLosses": 3,
-        "form": "WWWWL--"
-        },
-        
-        {
-        "position": 3,
-        "team": "Night Ninjas",
-        "players": [
-            "jon",
-            "SyiLenSa"
-        ],
-        "abbreviation": "NIN",
-        "color": "#b831e3",
-        "matchWins": 4,
-        "matchLosses": 2,
-        "gameWins": 6,
-        "gameLosses": 4,
-        "form": "WWLWW-L"
-        },
-        
-        {
-        "position": 4,
         "team": "Peam Tame Nending",
         "players": [
             "nago",
@@ -62,6 +30,38 @@
         "gameWins": 10,
         "gameLosses": 7,
         "form": "LWWLWWW"
+        },
+
+        {
+        "position": 3,
+        "team": "Cook or Be Cooked",
+        "players": [
+            "Miku_ds",
+            "Fatalr0ck"
+        ],
+        "abbreviation": "COOK",
+        "color": "#ee872b",
+        "matchWins": 4,
+        "matchLosses": 1,
+        "gameWins": 9,
+        "gameLosses": 3,
+        "form": "WWWWL-L"
+        },
+        
+        {
+        "position": 4,
+        "team": "100% Overstrum (NIN)",
+        "players": [
+            "jon",
+            "vaen"
+        ],
+        "abbreviation": "NIN",
+        "color": "#b831e3",
+        "matchWins": 4,
+        "matchLosses": 2,
+        "gameWins": 6,
+        "gameLosses": 4,
+        "form": "WWLWW-L"
         },
         
         {
@@ -77,10 +77,10 @@
         "matchLosses": 2,
         "gameWins": 2,
         "gameLosses": 4,
-        "form": "LLWWW--"
+        "form": "LLWWWLW"
         },
 
-         {
+        {
         "position": 6,
         "team": "Generation zzz",
         "players": [
