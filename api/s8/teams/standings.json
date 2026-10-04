@@ -32,8 +32,40 @@
         "form": "LWWLWWW"
         },
 
-        {
+         {
         "position": 3,
+        "team": "100% Overstrum (NIN)",
+        "players": [
+            "jon",
+            "vaen"
+        ],
+        "abbreviation": "NIN",
+        "color": "#b831e3",
+        "matchWins": 5,
+        "matchLosses": 2,
+        "gameWins": 8,
+        "gameLosses": 4,
+        "form": "WWLWWwL"
+        },
+
+          {
+        "position": 4,
+        "team": "0xSWARM",
+        "players": [
+            "7thAce",
+            "Bee"
+        ],
+        "abbreviation": "0xS",
+        "color": "#efe925",
+        "matchWins": 4,
+        "matchLosses": 3,
+        "gameWins": 5,
+        "gameLosses": 6,
+        "form": "LLWWWLW"
+        },
+
+        {
+        "position": 5,
         "team": "Cook or Be Cooked",
         "players": [
             "Miku_ds",
@@ -42,42 +74,10 @@
         "abbreviation": "COOK",
         "color": "#ee872b",
         "matchWins": 4,
-        "matchLosses": 1,
+        "matchLosses": 3,
         "gameWins": 9,
-        "gameLosses": 3,
-        "form": "WWWWL-L"
-        },
-        
-        {
-        "position": 4,
-        "team": "100% Overstrum (NIN)",
-        "players": [
-            "jon",
-            "vaen"
-        ],
-        "abbreviation": "NIN",
-        "color": "#b831e3",
-        "matchWins": 4,
-        "matchLosses": 2,
-        "gameWins": 6,
-        "gameLosses": 4,
-        "form": "WWLWW-L"
-        },
-        
-        {
-        "position": 5,
-        "team": "0xSWARM",
-        "players": [
-            "7thAce",
-            "Bee"
-        ],
-        "abbreviation": "0xS",
-        "color": "#efe925",
-        "matchWins": 3,
-        "matchLosses": 2,
-        "gameWins": 2,
-        "gameLosses": 4,
-        "form": "LLWWWLW"
+        "gameLosses": 7,
+        "form": "WWWWLLL"
         },
 
         {
@@ -292,7 +292,7 @@
             {
                 "team1": "Night Ninjas",
                 "team2": "Cook or Be Cooked",
-                "score1": 0,
+                "score1": 2,
                 "score2": 0
             },
             {
