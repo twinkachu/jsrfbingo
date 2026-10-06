@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>JSRF Bingo — V2</title>
+        <link rel="stylesheet" href="../board.css" />
+        <link rel="stylesheet" href="./v2.css" />
+        <link rel="stylesheet" href="./config.css" />
+    </head>
+    <body>
+        <main id="v2Canvas" class="v2-canvas" aria-label="JSRF Bingo V2 overlay">
+            <section id="v2Chat" class="v2-chat-window" aria-label="Game feed">
+                <div class="chat-panel">
+                    <div class="chat-header"><span>Game Feed</span></div>
+                    <div class="chat-log" aria-live="polite"></div>
+                </div>
+            </section>
+            <section id="v2Twitch" class="v2-twitch-window" aria-label="Twitch chat">
+                <div class="chat-panel">
+                    <div class="chat-header"><span>TWITCH CHAT</span><span id="v2TwitchChannelLabel" class="twitch-channel"></span></div>
+                    <div id="v2TwitchLog" class="chat-log" aria-live="polite"></div>
+                </div>
+            </section>
+            <div id="v2Board" class="v2-board-window"></div>
+            <section id="v2Points" class="v2-points-window" aria-label="Points"></section>
+            <section id="v2Map" class="v2-map-window" aria-label="World map and district points"></section>
+            <div id="v2LeftName" class="v2-nameplate v2-left-nameplate"></div>
+            <div id="v2RightName" class="v2-nameplate v2-right-nameplate"></div>
+            <section id="v2Timer" class="v2-timer" aria-label="Game timer">
+                <div class="v2-timer-value">00:00</div>
+            </section>
+            <img class="v2-frame" src="./SVGS/v2Frame.svg" alt="" aria-hidden="true" />
+            <div class="v2-grid-lines" aria-hidden="true">
+                <span class="v2-grid-lines-left"></span>
+                <span class="v2-grid-lines-right"></span>
+            </div>
+        </main>
+        <script src="../kevingo.js"></script>
+        <script src="../players.js"></script>
+        <script src="../board.js"></script>
+        <script src="../scoreboard.js"></script>
+        <script src="./theme.js"></script>
+        <script src="./config.js"></script>
+        <script src="./world-map.js"></script>
+        <script src="./drift-lines.js"></script>
+        <script src="./v2.js"></script>
+        <script src="./twitch-chat.js"></script>
+    </body>
+</html>

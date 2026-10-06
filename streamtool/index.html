@@ -4,7 +4,8 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <title>JSRF Bingo OBS Thing!</title>
-        <link rel="stylesheet" href="./styles.css" />
+        <link rel="stylesheet" href="./board.css" />
+        <link rel="stylesheet" href="./v1/v1.css?v=3" />
     </head>
     <body>
         <main id="appRoot" class="app">
@@ -16,25 +17,96 @@
                 </p>
 
                 <div class="row">
-                    <label for="leftName">Left Player Name</label>
-                    <input
-                        id="leftName"
-                        type="text"
-                        maxlength="24"
-                        placeholder="Left player"
-                    />
+                    <label for="frameVersion">Frame version</label>
+                    <select id="frameVersion">
+                        <option value="v2" selected>V2</option>
+                        <option value="v1">V1</option>
+                    </select>
                 </div>
-
                 <div class="row">
-                    <label for="rightName">Right Player Name</label>
-                    <input
-                        id="rightName"
-                        type="text"
-                        maxlength="24"
-                        placeholder="Right player"
-                    />
+                    <label for="playerSource">Configuration</label>
+                    <select id="playerSource">
+                        <option value="manual">Manual</option>
+                        <option value="kevingo">Kevingo Sourced</option>
+                    </select>
+                </div>
+                <div id="kevingoPlayerConfig" class="card hidden">
+                    <div class="row">
+                        <label for="playerAliases">Kevingo User</label>
+                        <textarea id="playerAliases" rows="3" maxlength="1600" placeholder="Your Kevingo username" aria-describedby="playerAliasesHelp"></textarea>
+                        <p id="playerAliasesHelp" class="frame-note">Use lots of names? Enter alt names separated by a new line! Case insensitive.</p>
+                    </div>
+                    <div class="row">
+                        <label for="playerSide">Side</label>
+                        <select id="playerSide"><option value="left">Left</option><option value="right">Right</option></select>
+                    </div>
+                    <details class="player-fallback-drawer">
+                        <summary>Fallback names</summary>
+                        <div class="row">
+                            <label for="playerFallbackP1">Fallback P1 name</label>
+                            <input id="playerFallbackP1" type="text" maxlength="24" placeholder="First Kevingo user" />
+                        </div>
+                        <div class="row">
+                            <label for="playerFallbackP2">Fallback P2 name</label>
+                            <input id="playerFallbackP2" type="text" maxlength="24" placeholder="FRIEND!" />
+                        </div>
+                    </details>
+                    <p class="frame-note">The opposite side follows your teammate, or the other player in a 1v1.</p>
+                </div>
+                <div id="manualPlayerConfig">
+                    <div class="row">
+                        <label for="leftName">Left Player Name</label>
+                        <input id="leftName" type="text" maxlength="24" placeholder="Left player" />
+                    </div>
+                    <div class="row">
+                        <label for="rightName">Right Player Name</label>
+                        <input id="rightName" type="text" maxlength="24" placeholder="Right player" />
+                    </div>
+                </div>
+                <div id="v2ThemeConfig" class="card v2-theme-config hidden">
+                    <label class="fx-title">Default color</label>
+                    <div id="v2ThemePresets" class="v2-theme-presets" role="radiogroup" aria-label="Default V2 frame color"></div>
+                    <div id="v2CustomColorRow" class="v2-custom-color hidden">
+                        <label for="v2ThemeColor">Custom color</label>
+                        <input id="v2ThemeColor" type="color" value="#386fee" />
+                        <span id="v2ThemeColorValue"></span>
+                    </div>
+                    <label id="frameAutoOption" class="toggle hidden"><input id="frameAuto" type="checkbox" />Auto swap with my team</label>
+                    <p class="frame-note">The selected color is used until your team is known.</p>
                 </div>
 
+                <div id="v2PanelConfig" class="card v2-panel-config hidden">
+                    <div class="v2-panel-control">
+                        <label class="toggle"><input id="v2BoardVisible" type="checkbox" />Bingo board</label>
+                    </div>
+                    <div class="v2-panel-control">
+                        <label class="toggle"><input id="v2ChatVisible" type="checkbox" />Game feed</label>
+                    </div>
+                    <div class="v2-panel-control">
+                        <label class="toggle"><input id="v2PointsVisible" type="checkbox" />Points</label>
+                    </div>
+                    <div class="v2-panel-control">
+                        <label class="toggle"><input id="v2TimerVisible" type="checkbox" />Timer</label>
+                    </div>
+                    <div class="v2-panel-control">
+                        <label class="toggle"><input id="v2MapVisible" type="checkbox" />Player tracker</label>
+                    </div>
+                    <div class="v2-twitch-control">
+                        <label class="toggle"><input id="v2TwitchVisible" type="checkbox" />Twitch chat</label>
+                        <div class="row">
+                            <label for="v2TwitchChannel">Twitch channel URL</label>
+                            <input id="v2TwitchChannel" type="text" inputmode="url" placeholder="https://www.twitch.tv/channel" autocomplete="off" spellcheck="false" />
+                            <p class="frame-note">Read-only chat with Twitch, 7TV, BetterTTV, and FFZ emotes.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <label class="toggle bfx-toggle"
+                    ><input id="disableBeeVfx" type="checkbox" />Disable
+                    BFX</label
+                >
+
+                <div id="v1OnlyConfig">
                 <div class="card fx-card">
                     <label class="fx-title">Color FX</label>
                     <div class="row fx-row">
@@ -81,24 +153,9 @@
                         />
                         <span id="contrastValue" class="fx-value">100%</span>
                     </div>
-                    <label class="toggle bfx-toggle"
-                        ><input id="disableBeeVfx" type="checkbox" />Disable
-                        BFX</label
-                    >
                 </div>
 
                 <div id="elementsRoot"></div>
-
-                <div class="actions">
-                    <button id="applyPreset" type="button">
-                        Reset to base design
-                    </button>
-                    <button id="copyUrl" type="button">Copy OBS URL</button>
-                </div>
-
-                <div class="linkout">
-                    <label for="urlOutput">Generated URL</label>
-                    <textarea id="urlOutput" readonly></textarea>
                 </div>
 
                 <p class="mode-note">
@@ -119,15 +176,45 @@
                         </span>
                     </span>
                 </p>
+                <div class="actions">
+                    <button id="applyPreset" type="button">
+                        Reset to base design
+                    </button>
+                    <button id="copyUrl" type="button">Copy OBS URL</button>
+                </div>
+
+                <div class="linkout">
+                    <label for="urlOutput">Generated URL</label>
+                    <textarea id="urlOutput" readonly></textarea>
+                </div>
+
             </section>
 
-            <section class="preview-wrap">
+            <section id="v2PreviewWrap" class="preview-wrap v2-preview-wrap hidden">
+                <p class="preview-title">V2 preview</p>
+                <p class="preview-meta">Sample game data shows how the colors look together.</p>
+                <div class="obs-canvas v2-preview-canvas">
+                    <iframe id="v2Preview" title="V2 color preview" src="./v2/?preview=1" loading="lazy"></iframe>
+                </div>
+            </section>
+
+            <section id="previewWrap" class="preview-wrap">
                 <p id="previewTitle" class="preview-title">Preview</p>
                 <p id="previewMeta" class="preview-meta"></p>
                 <div id="canvas" class="obs-canvas"></div>
             </section>
         </main>
 
-        <script src="./app.js"></script>
+        <script>
+            if (new URLSearchParams(location.search).get("mode") === "obs") {
+                location.replace(new URL(`v1/${location.search}${location.hash}`, location.href));
+            }
+        </script>
+        <script src="./kevingo.js"></script>
+        <script src="./players.js"></script>
+        <script src="./board.js"></script>
+        <script src="./scoreboard.js"></script>
+        <script src="./v2/theme.js"></script>
+        <script src="./v1/v1.js?v=4"></script>
     </body>
 </html>
