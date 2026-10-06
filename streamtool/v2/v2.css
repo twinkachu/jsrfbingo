@@ -26,8 +26,8 @@
   --theme-accent: hsl(183 98% 70%);
   --theme-accent-soft: hsl(183 84% 85%);
   --theme-glow: hsla(183 98% 70% / 0.22);
-  --theme-highlight: hsl(333 96% 66%);
-  --theme-highlight-soft: hsl(333 82% 82%);
+  --theme-highlight: hsl(333 80% 76%);
+  --theme-highlight-soft: hsl(333 70% 86%);
   --theme-border-subtle: hsla(183 90% 83% / 0.27);
   --theme-border-faint: hsla(183 90% 83% / 0.16);
   --theme-text: hsl(183 36% 98%);
@@ -680,13 +680,21 @@ body {
   --map-background: color-mix(in srgb, #111519 94%, var(--theme-frame-base));
   --map-unoccupied: color-mix(in srgb, #272d32 92%, var(--theme-frame-base));
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: 0.26cqw;
+  grid-template-rows: minmax(0, 1fr) auto;
   height: 100%;
-  padding: 0.36cqw;
   overflow: hidden;
-  border: 1px solid var(--theme-border-subtle);
   border-radius: 5px;
+}
+
+.world-map-content {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.26cqw;
+  min-height: 0;
+  padding: 0.36cqw;
+  border: 1px solid var(--theme-border-subtle);
+  border-bottom: 0;
+  border-radius: 5px 5px 0 0;
   background: var(--theme-panel);
 }
 
@@ -757,8 +765,8 @@ body {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.35cqw;
-  margin: 0 -0.36cqw -0.36cqw;
   padding: 0.3cqw 0.36cqw;
+  border-top: 1px solid var(--theme-border-subtle);
   background: var(--theme-shell);
 }
 
@@ -799,7 +807,9 @@ body {
   font-family: "Jet Set Italic", var(--display-font), sans-serif;
   font-size: 1.1cqw;
   font-style: italic;
-  -webkit-text-stroke: 1px #000;
+  -webkit-text-stroke: 4px #000;
+  paint-order: stroke fill;
+  text-shadow: 0 2px 0 #000;
 }
 
 @keyframes v2-score-change {

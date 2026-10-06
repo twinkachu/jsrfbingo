@@ -38,9 +38,11 @@
     const instance = ++instanceCount;
     container.innerHTML = `
       <div class="world-map-panel">
-        <div class="chat-header"><span>PLAYER TRACKER</span></div>
-        <div class="world-map-stage">
-          <img class="world-map-base" alt="JSRF world map" />
+        <div class="world-map-content">
+          <div class="chat-header"><span>PLAYER TRACKER</span></div>
+          <div class="world-map-stage">
+            <img class="world-map-base" alt="JSRF world map" />
+          </div>
         </div>
         <div class="world-map-districts" aria-label="Available points by district"></div>
       </div>
