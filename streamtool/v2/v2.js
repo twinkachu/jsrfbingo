@@ -12,6 +12,7 @@
   const PREVIEW_67_EMOTE_ID = "01M1VX1FMSSNNSHMH92GQX67AQ";
   const chatLog = document.querySelector("#v2Chat .chat-log");
   const chatPlayerColors = new Map();
+  const snipeProcessor = window.KevingoSnipes.createProcessor();
   const timerElement = document.getElementById("v2Timer");
   let timerFrame = null;
   let chatEmotes = previewMode
@@ -185,10 +186,12 @@
   }
 
   function showSnipeNotice(data) {
+    const snipe = snipeProcessor.accept(data);
+    if (!snipe) return;
     document.querySelector("#v2Chat .v2-snipe-notice")?.remove();
     const notice = document.createElement("div");
     notice.className = "v2-snipe-notice";
-    const time = Number(data?.time);
+    const time = Number(snipe.time);
     notice.innerHTML = `
       <div class="v2-snipe-kicker">SNIPE</div>
       <div class="v2-snipe-main"><span class="v2-snipe-sniper"></span><span class="v2-snipe-action">sniped</span><span class="v2-snipe-sniped"></span></div>
@@ -197,13 +200,13 @@
 
     const sniper = notice.querySelector(".v2-snipe-sniper");
     const sniped = notice.querySelector(".v2-snipe-sniped");
-    sniper.textContent = data?.sniper || "Someone";
-    sniped.textContent = data?.sniped || "someone";
+    sniper.textContent = snipe.sniper || "Someone";
+    sniped.textContent = snipe.sniped || "someone";
     const sniperColor = chatPlayerColors.get(sniper.textContent.trim().toLowerCase());
     const snipedColor = chatPlayerColors.get(sniped.textContent.trim().toLowerCase());
     if (sniperColor) sniper.style.color = sniperColor;
     if (snipedColor) sniped.style.color = snipedColor;
-    appendEventObjective(notice.querySelector(".v2-snipe-goal"), data?.goal, " - ");
+    appendEventObjective(notice.querySelector(".v2-snipe-goal"), snipe.goal, " - ");
     notice.querySelector(".v2-snipe-time-value").textContent = Number.isFinite(time) ? `${time.toFixed(3)}s` : "";
     notice.querySelector(".v2-snipe-time").hidden = !Number.isFinite(time);
     document.getElementById("v2Chat").appendChild(notice);
@@ -238,11 +241,8 @@
     } else if (event?.type === "snipe") {
       showSnipeNotice(event.data);
     } else if (event?.type === "notification" && event.data) {
-      let notification = event.data;
-      if (typeof notification === "string") {
-        try { notification = JSON.parse(notification); } catch { /* Keep plain-text notifications as chat. */ }
-      }
-      if (notification?.type === "snipe") showSnipeNotice(notification.data);
+      const notification = window.KevingoSnipes.parseMaybeJson(event.data);
+      if (notification && typeof notification === "object" && notification.type === "snipe") showSnipeNotice(notification.data);
       else appendChatMessage(event.data);
     }
   }
@@ -268,6 +268,10 @@
 
   function updatePlayers(snapshot) {
     const resolved = window.KevingoPlayers.resolve(config, snapshot.users);
+    worldMap.update(snapshot, {
+      ownTeamOnly: config.mapOwnTeam && config.playerSource === "kevingo",
+      team: resolved.player?.team
+    });
     snapshot.users.forEach((user) => {
       if (user?.name && window.Kevingo.isClaimedTeamColor(user.team)) {
         chatPlayerColors.set(user.name.trim().toLowerCase(), window.Kevingo.normalizeTeamColor(user.team));
@@ -325,7 +329,7 @@
       mapElement.hidden = data.map === false;
       document.getElementById("v2Twitch").hidden = data.twitch === false;
       window.JSRFTheme.apply(canvas, data.theme);
-      const names = `${left}\u0000${right}`;
+      const names = JSON.stringify([left, right, data.sourced, data.mapOwnTeam]);
       if (names === previousNames) return;
       previousNames = names;
       const users = [
@@ -334,7 +338,7 @@
       ];
       const samplePoints = window.Kevingo.calculateScoreboard(sampleBoard, users);
       points.update(samplePoints);
-      worldMap.update({ users, locations: [{ name: left, location: "Shibuya" }, { name: right, location: "Kibo" }], points: samplePoints });
+      worldMap.update({ users, locations: [{ name: left, location: "Shibuya" }, { name: right, location: "Kibo" }], points: samplePoints }, { ownTeamOnly: data.sourced && data.mapOwnTeam, team: "#1c5bd4" });
       chatLog.replaceChildren();
       appendChatMessage({ username: left, content: `[AUTOMARK] ${left} marked Shibuya - Tricks x 10`, color: "#1c5bd4", in_game_time: 444 }, false);
       appendChatMessage({ username: right, content: "67", color: "#fa5bb6", in_game_time: 445 }, false);
@@ -346,6 +350,8 @@
       points: config.points,
       timer: config.timer,
       map: config.map,
+      mapOwnTeam: config.mapOwnTeam,
+      sourced: config.playerSource === "kevingo",
       twitch: config.twitch,
       disableBeeVfx: config.disableBeeVfx
     });
@@ -391,7 +397,6 @@
     onUpdate(snapshot, event) {
       updatePlayers(snapshot);
       renderSnapshot(snapshot);
-      worldMap.update(snapshot);
       if (event.type === "board" || event.type === "new_board") {
         const nextBoard = snapshot.board;
         const markingSquareIndexes = event.type === "board"

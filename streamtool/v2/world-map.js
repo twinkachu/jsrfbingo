@@ -68,6 +68,7 @@
     }
 
     let snapshot = { users: [], locations: [], points: { ready: false, districts: [] } };
+    let tracking = { ownTeamOnly: false, team: null };
     let regions = null;
     let defs = null;
     let previousLocations = "";
@@ -79,7 +80,8 @@
       }
       const locations = new Map(snapshot.locations.map(({ name, location }) => [name, resolveArea(location)]));
       const players = snapshot.users
-        .filter((user) => window.Kevingo.isClaimedTeamColor(user?.team))
+        .filter((user) => window.Kevingo.isClaimedTeamColor(user?.team)
+          && (!tracking.ownTeamOnly || window.Kevingo.normalizeTeamColor(user.team) === tracking.team))
         .map((user) => {
           const reportedArea = locations.get(user.name);
           return {
@@ -181,7 +183,15 @@
       console.warn("Live map unavailable; keeping base map:", error);
     });
 
-    return { update(nextSnapshot) { snapshot = nextSnapshot; render(); } };
+    return { update(nextSnapshot, options = {}) {
+      snapshot = nextSnapshot;
+      tracking = {
+        ownTeamOnly: options.ownTeamOnly === true,
+        team: window.Kevingo.isClaimedTeamColor(options.team)
+          ? window.Kevingo.normalizeTeamColor(options.team) : null
+      };
+      render();
+    } };
   }
 
   window.JSRFWorldMap = Object.freeze({ mount, resolveArea });

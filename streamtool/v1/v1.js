@@ -1,13 +1,12 @@
 let activeFeedConnection = null;
 let activeTimerFrame = null;
-let seenSnipeSignatures = new Set();
+const snipeProcessor = window.KevingoSnipes.createProcessor();
 let chatPlayerColors = new Map();
 let chatEmoteMap = new Map();
 let chatEmoteLoadPromise = null;
 let canvasReferenceScaleObserver = null;
 const CHAT_MAX_MESSAGES = 80;
 const CHAT_7TV_CHANNEL_ID = "58301305";
-const MAX_SEEN_SNIPE_SIGNATURES = 10;
 const BOARD_SIZE = window.Kevingo.boardSize;
 
 const BASE = {
@@ -83,6 +82,7 @@ function createConfig(source = BASE) {
   const config = { ...source, ...window.KevingoPlayers.normalize(source), disableBeeVfx: Boolean(source.disableBeeVfx) };
   config.twitch = { show: Boolean(source.twitch?.show) };
   config.map = { show: source.map?.show !== false };
+  config.mapOwnTeam = source.mapOwnTeam === true;
   const theme = normalizeV2Theme(source);
   config.themePreset = theme.preset;
   config.themeHue = theme.hue;
@@ -178,6 +178,7 @@ function updateV2Preview(config) {
     points: config.points.show,
     timer: config.timer.show,
     map: config.map.show,
+    mapOwnTeam: config.mapOwnTeam,
     twitch: config.twitch.show,
     disableBeeVfx: config.disableBeeVfx
   }, location.origin === "null" ? "*" : location.origin);
@@ -576,58 +577,9 @@ function trimChatLog(log) {
   }
 }
 
-function parseMaybeJson(value) {
-  if (typeof value !== "string") return value;
-  try {
-    return JSON.parse(value);
-  } catch {
-    return value;
-  }
-}
-
-function normalizeSnipeSignatureText(value) {
-  return String(value ?? "").trim().replace(/\s+/g, " ").toLowerCase();
-}
-
-function normalizeSnipeSignatureTime(value) {
-  if (value === null || value === undefined || value === "") return "";
-  const numericValue = Number(value);
-  if (Number.isFinite(numericValue)) return numericValue.toFixed(3);
-  return normalizeSnipeSignatureText(value);
-}
-
-function createSnipeSignature(snipe) {
-  const sniper = normalizeSnipeSignatureText(snipe.sniper);
-  const sniped = normalizeSnipeSignatureText(snipe.sniped);
-  const goal = normalizeSnipeSignatureText(snipe.goal);
-  if (!sniper || !sniped || !goal) return "";
-
-  return [
-    sniper,
-    sniped,
-    goal,
-    normalizeSnipeSignatureTime(snipe.time)
-  ].join("|");
-}
-
-function rememberSnipeSignature(signature) {
-  if (seenSnipeSignatures.has(signature)) return false;
-
-  seenSnipeSignatures.add(signature);
-  while (seenSnipeSignatures.size > MAX_SEEN_SNIPE_SIGNATURES) {
-    const oldestSignature = seenSnipeSignatures.values().next().value;
-    seenSnipeSignatures.delete(oldestSignature);
-  }
-
-  return true;
-}
-
 function showSnipeNotification(slot, data) {
-  const snipe = parseMaybeJson(data);
-  if (!snipe || typeof snipe !== "object") return;
-
-  const signature = createSnipeSignature(snipe);
-  if (!signature || !rememberSnipeSignature(signature)) return;
+  const snipe = snipeProcessor.accept(data);
+  if (!snipe) return;
 
   const existing = slot.querySelector(".snipe-notification");
   if (existing) existing.remove();
@@ -727,7 +679,7 @@ function handleChatPayload(slot, log, payload) {
   }
 
   if (event.type === "notification" && event.data) {
-    const notification = parseMaybeJson(event.data);
+    const notification = window.KevingoSnipes.parseMaybeJson(event.data);
     if (notification && typeof notification === "object" && notification.type === "snipe") {
       showSnipeNotification(slot, notification.data);
       return;
@@ -929,6 +881,7 @@ function parseConfig(searchParams) {
   config.twitchChannel = readTwitchChannel(searchParams.get("twitchChannel"));
   config.twitch.show = searchParams.get("twitch") !== "0";
   config.map.show = searchParams.get("map") !== "0";
+  config.mapOwnTeam = searchParams.get("mapOwnTeam") === "1";
   const theme = normalizeV2Theme({ themePreset: searchParams.get("theme"), themeHue: searchParams.get("themeHue"), themeColor: searchParams.get("themeColor") });
   config.themePreset = theme.preset;
   config.themeHue = theme.hue;
@@ -957,6 +910,7 @@ function configToSerializable(config) {
   serialized.twitchChannel = readTwitchChannel(config.twitchChannel);
   serialized.twitch.show = config.twitch?.show !== false;
   serialized.map.show = config.map?.show !== false;
+  serialized.mapOwnTeam = config.mapOwnTeam === true;
   const theme = normalizeV2Theme(config);
   serialized.themePreset = theme.preset;
   serialized.themeHue = theme.hue;
@@ -1023,6 +977,7 @@ function writeFrameParams(p, config, frameVersion) {
   p.set("rightName", serializePlayerName(config.rightName));
   p.set("disableBeeVfx", config.disableBeeVfx ? "1" : "0");
   if (frameVersion === "v2") {
+    p.set("mapOwnTeam", config.mapOwnTeam ? "1" : "0");
     if (config.twitchChannel) p.set("twitchChannel", readTwitchChannel(config.twitchChannel));
     p.set("theme", config.themePreset);
     if (config.themePreset === "custom") {
@@ -1168,6 +1123,7 @@ function syncConfigToForm(config) {
   byId("playerFallbackP1").placeholder = config.playerAliases[0] || "First Kevingo user";
   byId("playerFallbackP2").value = config.playerFallbackP2;
   byId("frameAuto").checked = config.frameAuto;
+  byId("v2MapOwnTeam").checked = config.mapOwnTeam;
   syncPlayerControls(config);
   const leftName = byId("leftName");
   const rightName = byId("rightName");
@@ -1193,6 +1149,7 @@ function readConfigFromForm(currentConfig) {
   next.playerFallbackP1 = byId("playerFallbackP1").value;
   next.playerFallbackP2 = byId("playerFallbackP2").value;
   next.frameAuto = byId("frameAuto").checked;
+  next.mapOwnTeam = byId("v2MapOwnTeam").checked;
   next.leftName = readPlayerName(byId("leftName").value);
   next.rightName = readPlayerName(byId("rightName").value);
   for (const key of FX_FIELDS) {
@@ -1268,6 +1225,7 @@ function wireUi(state) {
     onAnyChange();
   });
   byId("frameAuto").addEventListener("change", onAnyChange);
+  byId("v2MapOwnTeam").addEventListener("change", onAnyChange);
   byId("playerAliases").addEventListener("input", onAnyChange);
   byId("playerSide").addEventListener("change", onAnyChange);
   byId("playerFallbackP1").addEventListener("input", onAnyChange);
@@ -1313,6 +1271,11 @@ function wireUi(state) {
 
 function syncPlayerControls(config) {
   const sourced = config.playerSource === 'kevingo';
+  byId('v2MapOwnTeam').disabled = !sourced;
+  byId('v2MapTeamOption').classList.toggle('is-disabled', !sourced);
+  byId('v2MapTeamOption').title = sourced
+    ? 'Show only players on your matched Kevingo team. Waiting for a team match shows no players.'
+    : 'Requires Kevingo Sourced configuration to identify your tracked team.';
   byId('kevingoPlayerConfig').classList.toggle('hidden', !sourced);
   byId('playerFallbackP1').placeholder = config.playerAliases[0] || 'First Kevingo user';
   byId('manualPlayerConfig').classList.toggle('hidden', sourced);

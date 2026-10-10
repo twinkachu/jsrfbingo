@@ -28,6 +28,7 @@
       themeHue: theme.hue,
       themeColor: theme.baseColor,
       twitchChannel: twitchChannel(source.twitchChannel),
+      mapOwnTeam: source.mapOwnTeam === true,
       disableBeeVfx: source.disableBeeVfx === true
     };
     for (const key of Object.keys(panelNames)) config[key] = source[key] !== false;
@@ -40,6 +41,7 @@
       leftName: search.get("leftName"), rightName: search.get("rightName"),
       themePreset: search.get("theme"), themeHue: search.get("themeHue"), themeColor: search.get("themeColor"),
       twitchChannel: search.get("twitchChannel"),
+      mapOwnTeam: search.get("mapOwnTeam") === "1",
       disableBeeVfx: search.get("disableBeeVfx") === "1",
       ...Object.fromEntries(Object.keys(panelNames).map((key) => [key, search.get(key) !== "0"]))
     });
@@ -50,7 +52,8 @@
   function storedOverride() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-      if (saved?.urlSignature === signature && saved.overrideConfig) return normalize(saved.overrideConfig);
+      if (saved?.urlSignature && saved.overrideConfig
+        && JSON.stringify(normalize(JSON.parse(saved.urlSignature))) === signature) return normalize(saved.overrideConfig);
       if (saved) localStorage.removeItem(STORAGE_KEY);
     } catch (error) {
       console.warn("Could not read V2 OBS settings:", error);
@@ -128,7 +131,9 @@
           <div class="v2-obs-menu-section">
             <h3>Panels and effects</h3>
             <div class="v2-obs-panel-options">
-              ${Object.entries(panelNames).map(([key, label]) => `<label class="v2-obs-check"><input data-field="${key}" type="checkbox"> ${label}</label>`).join("")}
+              ${Object.entries(panelNames).map(([key, label]) => key === "map"
+                ? `<div class="tracker-options"><label class="v2-obs-check"><input data-field="map" type="checkbox"> ${label}</label><label class="v2-obs-check tracker-team-option" data-team-option><input data-field="mapOwnTeam" type="checkbox"> Only show own team</label></div>`
+                : `<label class="v2-obs-check"><input data-field="${key}" type="checkbox"> ${label}</label>`).join("")}
               <label class="v2-obs-check"><input data-field="disableBeeVfx" type="checkbox"> Disable BFX</label>
             </div>
             <label>Twitch channel URL or name <input data-field="twitchChannel" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://www.twitch.tv/channel"></label>
@@ -172,13 +177,19 @@
       field("playerFallbackP1").value = config.playerFallbackP1;
       field("playerFallbackP1").placeholder = config.playerAliases[0] || "First Kevingo user";
       field("playerFallbackP2").value = config.playerFallbackP2;
-      for (const key of ["frameAuto", "disableBeeVfx", ...Object.keys(panelNames)]) field(key).checked = config[key];
+      for (const key of ["frameAuto", "mapOwnTeam", "disableBeeVfx", ...Object.keys(panelNames)]) field(key).checked = config[key];
       panel.querySelectorAll("[data-choice]").forEach((button) => {
         button.setAttribute("aria-pressed", String(config[button.dataset.choice] === button.dataset.value));
       });
       field("themeColor").value = config.themeColor || window.JSRFTheme.hexFromHue(config.themeHue);
       field("themeColor").removeAttribute("aria-invalid");
       custom.querySelector(".v2-obs-theme-swatch").style.background = field("themeColor").value;
+      field("mapOwnTeam").disabled = config.playerSource !== "kevingo";
+      const teamOption = panel.querySelector("[data-team-option]");
+      teamOption.classList.toggle("is-disabled", field("mapOwnTeam").disabled);
+      teamOption.title = field("mapOwnTeam").disabled
+        ? "Requires Kevingo Sourced configuration to identify your tracked team."
+        : "Show only players on your matched Kevingo team. Waiting for a team match shows no players.";
       panel.querySelector("[data-sourced]").hidden = config.playerSource !== "kevingo";
       panel.querySelector("[data-manual]").hidden = config.playerSource === "kevingo";
       panel.querySelectorAll("[data-custom-color]").forEach((element) => { element.hidden = config.themePreset !== "custom"; });
@@ -207,6 +218,7 @@
         themePreset, themeColor,
         themeHue: themeColor ? window.JSRFTheme.hueFromHex(themeColor) : current.themeHue,
         twitchChannel: field("twitchChannel").value,
+        mapOwnTeam: field("mapOwnTeam").checked,
         disableBeeVfx: field("disableBeeVfx").checked,
         ...Object.fromEntries(Object.keys(panelNames).map((key) => [key, field(key).checked]))
       });
